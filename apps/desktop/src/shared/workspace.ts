@@ -36,4 +36,20 @@ export type FileOpenResult = {
   path: string;
 };
 
-export type AppCommand = "open-file" | "open-folder" | "save" | "new-file" | "new-folder";
+export type SearchResult = {
+  path: string;
+  name: string;
+  line: number;
+  snippet: string;
+};
+
+export type ThemeMode = "light" | "dark";
+
+export type AppSettings = {
+  defaultWorkspacePath: string;
+  themeId: string;
+  themeMode: ThemeMode;
+  recentFiles: string[];
+};
+
+export type AppCommand = "open-file" | "open-folder" | "save" | "new-file" | "new-folder" | "search" | "quick-open";

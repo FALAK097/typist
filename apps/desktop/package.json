@@ -6,18 +6,23 @@
   "main": "dist-electron/electron/main.js",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -k \"vite\" \"tsc -p electron/tsconfig.json --watch\" \"wait-on tcp:5173 dist-electron/electron/main.js && electron .\"",
+    "dev": "concurrently -k \"vite\" \"tsc -p electron/tsconfig.json --watch\" \"wait-on http-get://127.0.0.1:5173 dist-electron/electron/main.js && electron .\"",
     "build": "tsc -p electron/tsconfig.json && vite build",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p electron/tsconfig.json",
     "lint": "eslint . --ext ts,tsx"
   },
   "dependencies": {
+    "@tiptap/extension-placeholder": "^3.20.1",
+    "@tiptap/pm": "^3.20.1",
+    "@tiptap/react": "^3.20.1",
+    "@tiptap/starter-kit": "^3.20.1",
     "chokidar": "^4.0.3",
     "electron": "^35.0.0",
+    "marked": "^17.0.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1",
+    "turndown": "^7.2.2",
+    "turndown-plugin-gfm": "^1.0.2",
     "zustand": "^5.0.3"
   },
   "devDependencies": {

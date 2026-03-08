@@ -43,9 +43,8 @@ Desktop:
 - Vite
 - TypeScript
 - Zustand
-- `react-markdown`
-- `remark-gfm`
 - `chokidar`
+- TipTap
 
 Web:
 
@@ -55,7 +54,6 @@ Web:
 
 Planned later:
 
-- TipTap or ProseMirror
 - Shiki
 - KaTeX
 - Mermaid
@@ -80,30 +78,31 @@ Shipped now:
 
 - desktop/web monorepo split
 - Electron desktop shell with preload IPC
+- default workspace rooted at `Documents/Typist`
 - desktop file open and folder open
-- recursive markdown sidebar
-- markdown preview
-- editable markdown source pane
+- recursive notes sidebar
+- recent files in sidebar
+- single-pane TipTap editor surface
 - save flow
 - autosave
 - file watching and safe refresh
-- unsaved-change protection
-- native menu commands
-- new file / new folder flows
-- basic markdown formatting toolbar
+- native command palette with `Cmd/Ctrl+P`
+- new note / previous note / next note commands
+- global search and file search through palette
+- theme switching and theme preview through palette
+- persisted settings for workspace path and theme mode
+- desktop dev startup hardened with renderer retry + preload failure fallback
 - standalone web landing page
 - placeholder download buttons
 
 In progress:
 
-- richer editor beyond textarea + toolbar
+- stronger markdown fidelity and richer inline shortcuts
 - better file and folder creation UX
 - better OS-level open-with integration
 
 Not started:
 
-- global search
-- themes
 - export
 - drag-and-drop image import
 - syntax highlighting
@@ -127,11 +126,12 @@ Not started:
 
 - [X] Electron shell and preload bridge
 - [X] React desktop renderer
+- [X] Default `Documents/Typist` workspace
 - [X] Open markdown file
 - [X] Open markdown folder
 - [X] Recursive sidebar explorer
+- [X] Recent files in sidebar
 - [X] File switching
-- [X] Live markdown preview
 - [X] Save file
 - [X] Watch external file changes
 - [ ] Finder / Explorer open-with integration
@@ -139,23 +139,24 @@ Not started:
 
 ### Phase 2: Editor
 
-- [X] Editable markdown source pane
+- [X] Single-pane markdown-aware editor
+- [X] TipTap-based editor surface
 - [X] Autosave
-- [X] Basic formatting toolbar
 - [X] New file flow
-- [X] New folder flow
-- [ ] Replace textarea with markdown-aware editor abstraction
-- [ ] Inline WYSIWYG editing
+- [ ] Better new note flow without prompt
+- [ ] New folder flow inside command palette
+- [ ] Stronger inline markdown shortcut behavior
 - [ ] Better insertion and selection behavior
 - [ ] Drag-and-drop image support
 - [ ] Rich keyboard formatting shortcuts
 
 ### Phase 3: Power Features
 
-- [ ] Global search
-- [ ] Themes
-- [ ] Quick open
-- [ ] Command palette
+- [X] Global search
+- [X] Themes
+- [X] Quick open
+- [X] Command palette
+- [ ] Saved command history / smarter ranking
 - [ ] Export markdown
 - [ ] Export PDF
 
@@ -177,7 +178,7 @@ Not started:
 
 ## Next Up
 
-1. Replace the textarea editor with a markdown-aware editing layer.
-2. Add workspace search.
-3. Improve creation flows with real dialogs instead of prompts.
+1. Improve markdown round-tripping fidelity and inline shortcut behavior in TipTap.
+2. Improve note creation and folder creation flows inside the palette/settings model.
+3. Expand the theme system with more families and tighter command-palette-style navigation.
 4. Add packaging so the web app can ship real downloads.
