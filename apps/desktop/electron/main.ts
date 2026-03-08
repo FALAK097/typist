@@ -3,7 +3,7 @@ import { watch } from "chokidar";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { AppCommand, DirectoryNode, FileOpenResult, WorkspaceSnapshot } from "../src/shared/workspace.js";
+import type { AppCommand, DirectoryNode, FileOpenResult, SearchResult, WorkspaceSnapshot } from "../src/shared/workspace.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,9 +12,32 @@ const isDev = !app.isPackaged;
 let mainWindow: BrowserWindow | null = null;
 let activeWatcher: ReturnType<typeof watch> | null = null;
 let activeWorkspaceRoot: string | null = null;
+const devServerUrl = "http://127.0.0.1:5173";
 
 function isMarkdownFile(fileName: string) {
   return fileName.endsWith(".md") || fileName.endsWith(".markdown");
+}
+
+async function loadRenderer(window: BrowserWindow) {
+  if (!isDev) {
+    await window.loadFile(path.join(__dirname, "../dist/index.html"));
+    return;
+  }
+
+  const maxAttempts = 20;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      await window.loadURL(devServerUrl);
+      return;
+    } catch (error) {
+      if (attempt === maxAttempts) {
+        throw error;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 350));
+    }
+  }
 }
 
 async function createWindow() {
@@ -26,15 +49,21 @@ async function createWindow() {
     titleBarStyle: "hiddenInset",
     backgroundColor: "#f5f2eb",
     webPreferences: {
-      preload: path.join(__dirname, "preload.js")
+      preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true,
+      sandbox: false
     }
   });
 
-  if (isDev) {
-    await mainWindow.loadURL("http://127.0.0.1:5173");
-  } else {
-    await mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
-  }
+  mainWindow.webContents.on("did-fail-load", (_event, code, description, validatedUrl) => {
+    console.error("Renderer load failed:", { code, description, validatedUrl });
+  });
+
+  mainWindow.webContents.on("preload-error", (_event, preloadPath, error) => {
+    console.error("Preload failed:", preloadPath, error);
+  });
+
+  await loadRenderer(mainWindow);
 
   const menu = Menu.buildFromTemplate([
     {
@@ -75,6 +104,14 @@ async function createWindow() {
           accelerator: "CmdOrCtrl+S",
           click: () => {
             mainWindow?.webContents.send("app:command", "save" satisfies AppCommand);
+          }
+        },
+        { type: "separator" },
+        {
+          label: "Global Search",
+          accelerator: "CmdOrCtrl+Shift+F",
+          click: () => {
+            mainWindow?.webContents.send("app:command", "search" satisfies AppCommand);
           }
         }
       ]
@@ -193,6 +230,37 @@ async function openWorkspace(dirPath: string): Promise<WorkspaceSnapshot> {
   };
 }
 
+async function searchWorkspace(query: string): Promise<SearchResult[]> {
+  if (!activeWorkspaceRoot || !query.trim()) {
+    return [];
+  }
+
+  const tree = await buildDirectoryTree(activeWorkspaceRoot);
+  const files = await collectMarkdownFiles(tree);
+  const needle = query.toLowerCase();
+  const results: SearchResult[] = [];
+
+  for (const filePath of files) {
+    const content = await fs.readFile(filePath, "utf8");
+    const lines = content.split(/\r?\n/);
+
+    lines.forEach((lineContent, index) => {
+      if (!lineContent.toLowerCase().includes(needle)) {
+        return;
+      }
+
+      results.push({
+        path: filePath,
+        name: path.basename(filePath),
+        line: index + 1,
+        snippet: lineContent.trim().slice(0, 180)
+      });
+    });
+  }
+
+  return results.slice(0, 50);
+}
+
 async function showOpenDialog(kind: "file" | "directory"): Promise<FileOpenResult | null> {
   const properties: Array<"openFile" | "openDirectory" | "createDirectory"> =
     kind === "file" ? ["openFile"] : ["openDirectory", "createDirectory"];
@@ -259,6 +327,8 @@ ipcMain.handle("workspace:createFolder", async (_event, parentDir: string, folde
 
   return buildDirectoryTree(activeWorkspaceRoot);
 });
+
+ipcMain.handle("workspace:search", async (_event, query: string) => searchWorkspace(query));
 
 ipcMain.handle("workspace:openDocument", async (_event) => {
   const selection = await showOpenDialog("file");

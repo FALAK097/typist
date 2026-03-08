@@ -36,6 +36,8 @@ Desktop app:
 pnpm dev:desktop
 ```
 
+If the Electron window opens before the renderer is ready, restart once after pulling the latest changes. The desktop app now waits for the HTTP dev server and retries renderer boot in development.
+
 Web landing page:
 
 ```bash
@@ -105,6 +107,7 @@ typist/
 - browse files in a sidebar
 - edit markdown source
 - live preview rendered markdown
+- global workspace search with `Cmd/Ctrl+Shift+F`
 - autosave
 - create new files and folders
 - basic formatting toolbar
@@ -118,3 +121,4 @@ typist/
 
 - Desktop packaging is not implemented yet, so the web download links are placeholders.
 - The desktop editor is still textarea-based; richer inline editing is the next major step.
+- I validated the repo with `pnpm typecheck`, `pnpm build`, and React Doctor, but I have not visually verified the running UI from this environment.

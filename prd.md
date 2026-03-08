@@ -91,6 +91,8 @@ Shipped now:
 - native menu commands
 - new file / new folder flows
 - basic markdown formatting toolbar
+- global workspace search with result snippets
+- desktop dev startup hardened with renderer retry + preload failure fallback
 - standalone web landing page
 - placeholder download buttons
 
@@ -152,7 +154,7 @@ Not started:
 
 ### Phase 3: Power Features
 
-- [ ] Global search
+- [X] Global search
 - [ ] Themes
 - [ ] Quick open
 - [ ] Command palette
@@ -178,6 +180,6 @@ Not started:
 ## Next Up
 
 1. Replace the textarea editor with a markdown-aware editing layer.
-2. Add workspace search.
+2. Add quick open and command-palette style navigation.
 3. Improve creation flows with real dialogs instead of prompts.
 4. Add packaging so the web app can ship real downloads.

@@ -6,7 +6,7 @@
   "main": "dist-electron/electron/main.js",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -k \"vite\" \"tsc -p electron/tsconfig.json --watch\" \"wait-on tcp:5173 dist-electron/electron/main.js && electron .\"",
+    "dev": "concurrently -k \"vite\" \"tsc -p electron/tsconfig.json --watch\" \"wait-on http-get://127.0.0.1:5173 dist-electron/electron/main.js && electron .\"",
     "build": "tsc -p electron/tsconfig.json && vite build",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p electron/tsconfig.json",
     "lint": "eslint . --ext ts,tsx"

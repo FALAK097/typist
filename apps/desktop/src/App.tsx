@@ -1,11 +1,30 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { EditorPane } from "./components/EditorPane";
 import { MarkdownPreview } from "./components/MarkdownPreview";
+import { SearchPanel } from "./components/SearchPanel";
 import { Sidebar } from "./components/Sidebar";
+import type { SearchResult } from "./shared/workspace";
 import { useWorkspaceStore } from "./store/workspace";
 
 export function App() {
-  return <DesktopApp typist={window.typist!} />;
+  const typist = window.typist;
+
+  if (!typist) {
+    return (
+      <main className="boot-error-shell">
+        <section className="boot-error-card">
+          <p className="panel-label">Renderer Boot Error</p>
+          <h1>Typist could not connect to the Electron preload API.</h1>
+          <p>
+            The desktop window loaded, but the secure preload bridge was not available in the renderer. Check the
+            terminal for Electron preload errors, then restart `pnpm dev:desktop`.
+          </p>
+        </section>
+      </main>
+    );
+  }
+
+  return <DesktopApp typist={typist} />;
 }
 
 function DesktopApp({ typist }: { typist: NonNullable<Window["typist"]> }) {
@@ -27,6 +46,11 @@ function DesktopApp({ typist }: { typist: NonNullable<Window["typist"]> }) {
     setError
   } = useWorkspaceStore();
 
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
   useEffect(() => {
     return typist.onWorkspaceChanged(async ({ tree: nextTree, changedPath }) => {
       setTree(nextTree);
@@ -37,6 +61,38 @@ function DesktopApp({ typist }: { typist: NonNullable<Window["typist"]> }) {
       }
     });
   }, [activeFile?.path, isDirty, setActiveFile, setTree, typist]);
+
+  useEffect(() => {
+    if (!isSearchOpen || !rootPath || !searchQuery.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    let cancelled = false;
+    setIsSearching(true);
+
+    const timer = window.setTimeout(async () => {
+      try {
+        const results = await typist.searchWorkspace(searchQuery);
+
+        if (!cancelled) {
+          setSearchResults(results);
+          setIsSearching(false);
+        }
+      } catch (searchError) {
+        if (!cancelled) {
+          setError(searchError instanceof Error ? searchError.message : "Unable to search workspace.");
+          setIsSearching(false);
+        }
+      }
+    }, 160);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [isSearchOpen, rootPath, searchQuery, setError, typist]);
 
   const confirmDiscardChanges = () => {
     if (!isDirty) {
@@ -82,6 +138,9 @@ function DesktopApp({ typist }: { typist: NonNullable<Window["typist"]> }) {
       const workspace = await typist.openFolder();
       if (workspace) {
         setWorkspace(workspace);
+        setIsSearchOpen(false);
+        setSearchQuery("");
+        setSearchResults([]);
       }
     } catch (openError) {
       setError(openError instanceof Error ? openError.message : "Unable to open folder.");
@@ -101,6 +160,7 @@ function DesktopApp({ typist }: { typist: NonNullable<Window["typist"]> }) {
           tree: [],
           activeFile: file
         });
+        setIsSearchOpen(false);
       }
     } catch (openError) {
       setError(openError instanceof Error ? openError.message : "Unable to open file.");
@@ -122,6 +182,10 @@ function DesktopApp({ typist }: { typist: NonNullable<Window["typist"]> }) {
     } catch (openError) {
       setError(openError instanceof Error ? openError.message : "Unable to read file.");
     }
+  };
+
+  const handleOpenSearchResult = async (result: SearchResult) => {
+    await handleFileOpen(result.path);
   };
 
   const resolveCurrentDirectory = () => {
@@ -206,6 +270,11 @@ function DesktopApp({ typist }: { typist: NonNullable<Window["typist"]> }) {
         event.preventDefault();
         await handleCreateFolder();
       }
+
+      if (event.key.toLowerCase() === "f" && event.shiftKey) {
+        event.preventDefault();
+        setIsSearchOpen(true);
+      }
     };
 
     window.addEventListener("keydown", onKeyDown);
@@ -236,6 +305,11 @@ function DesktopApp({ typist }: { typist: NonNullable<Window["typist"]> }) {
 
       if (command === "new-folder") {
         await handleCreateFolder();
+        return;
+      }
+
+      if (command === "search") {
+        setIsSearchOpen(true);
       }
     });
   }, [activeFile, draftContent, isDirty, rootPath, typist]);
@@ -276,11 +350,14 @@ function DesktopApp({ typist }: { typist: NonNullable<Window["typist"]> }) {
             <p className="hero-eyebrow">Minimal Markdown Workspace</p>
             <h1>Typist</h1>
             <p className="hero-copy">
-              The desktop app now supports workspace browsing, markdown editing, live preview, autosave, and quick
-              creation of files and folders while the richer inline editor is still in progress.
+              The desktop app now supports workspace browsing, markdown editing, live preview, autosave, and global
+              search while the richer inline editor is still in progress.
             </p>
           </div>
           <div className="hero-actions">
+            <button className="secondary-button" onClick={() => setIsSearchOpen(true)} type="button">
+              Search
+            </button>
             <button className="secondary-button" onClick={handleCreateFile} type="button">
               New File
             </button>
@@ -296,6 +373,15 @@ function DesktopApp({ typist }: { typist: NonNullable<Window["typist"]> }) {
           </div>
         </header>
         {error ? <div className="error-banner">{error}</div> : null}
+        <SearchPanel
+          query={searchQuery}
+          results={searchResults}
+          isLoading={isSearching}
+          isOpen={isSearchOpen}
+          onChangeQuery={setSearchQuery}
+          onClose={() => setIsSearchOpen(false)}
+          onOpenResult={handleOpenSearchResult}
+        />
         <section className="workspace-panels">
           <EditorPane
             content={draftContent}

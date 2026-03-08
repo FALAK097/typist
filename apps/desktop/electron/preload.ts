@@ -3,6 +3,7 @@ import type {
   AppCommand,
   FileDocument,
   FileOpenResult,
+  SearchResult,
   WorkspaceChangeEvent,
   WorkspaceSnapshot
 } from "../src/shared/workspace.js";
@@ -28,6 +29,9 @@ const api = {
   },
   createFolder(parentDir: string, folderName: string) {
     return ipcRenderer.invoke("workspace:createFolder", parentDir, folderName) as Promise<WorkspaceSnapshot["tree"]>;
+  },
+  searchWorkspace(query: string) {
+    return ipcRenderer.invoke("workspace:search", query) as Promise<SearchResult[]>;
   },
   onWorkspaceChanged(listener: (event: WorkspaceChangeEvent) => void) {
     const wrapped = (_event: Electron.IpcRendererEvent, payload: WorkspaceChangeEvent) => {
