@@ -43,9 +43,8 @@ Desktop:
 - Vite
 - TypeScript
 - Zustand
-- `react-markdown`
-- `remark-gfm`
 - `chokidar`
+- TipTap
 
 Web:
 
@@ -55,7 +54,6 @@ Web:
 
 Planned later:
 
-- TipTap or ProseMirror
 - Shiki
 - KaTeX
 - Mermaid
@@ -84,7 +82,7 @@ Shipped now:
 - desktop file open and folder open
 - recursive notes sidebar
 - recent files in sidebar
-- single-pane markdown-aware editor surface
+- single-pane TipTap editor surface
 - save flow
 - autosave
 - file watching and safe refresh
@@ -99,13 +97,12 @@ Shipped now:
 
 In progress:
 
-- richer editor beyond textarea + toolbar
+- stronger markdown fidelity and richer inline shortcuts
 - better file and folder creation UX
 - better OS-level open-with integration
 
 Not started:
 
-- themes
 - export
 - drag-and-drop image import
 - syntax highlighting
@@ -143,6 +140,7 @@ Not started:
 ### Phase 2: Editor
 
 - [X] Single-pane markdown-aware editor
+- [X] TipTap-based editor surface
 - [X] Autosave
 - [X] New file flow
 - [ ] Better new note flow without prompt
@@ -155,7 +153,7 @@ Not started:
 ### Phase 3: Power Features
 
 - [X] Global search
-- [ ] Themes
+- [X] Themes
 - [X] Quick open
 - [X] Command palette
 - [ ] Saved command history / smarter ranking
@@ -180,7 +178,7 @@ Not started:
 
 ## Next Up
 
-1. Replace the textarea editor with a markdown-aware editing layer.
+1. Improve markdown round-tripping fidelity and inline shortcut behavior in TipTap.
 2. Improve note creation and folder creation flows inside the palette/settings model.
 3. Expand the theme system with more families and tighter command-palette-style navigation.
 4. Add packaging so the web app can ship real downloads.

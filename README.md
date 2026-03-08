@@ -107,7 +107,7 @@ typist/
 - open markdown folders
 - browse notes in a sidebar
 - see recently opened files in the sidebar
-- edit notes in a single-pane markdown-aware editor
+- edit notes in a single-pane TipTap editor with markdown shortcuts
 - quick open with `Cmd/Ctrl+P`
 - search files, commands, and themes through the command palette
 - autosave
@@ -123,5 +123,5 @@ typist/
 ## Notes
 
 - Desktop packaging is not implemented yet, so the web download links are placeholders.
-- The desktop app is now moving toward a Typora-style single-surface editor, but it still needs more polish around note creation flows and richer markdown behaviors.
+- The desktop app now uses TipTap as the editor surface and saves markdown files, but markdown round-tripping still needs local UX validation and further polish.
 - I validated the repo with `pnpm typecheck`, `pnpm build`, and React Doctor, but I have not visually verified the running UI from this environment.

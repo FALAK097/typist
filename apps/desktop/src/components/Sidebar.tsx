@@ -1,11 +1,23 @@
 import type { DirectoryNode } from "../shared/workspace";
 
+function getBaseName(targetPath: string | null) {
+  if (!targetPath) {
+    return null;
+  }
+
+  return targetPath.split(/[\\/]/).at(-1) ?? targetPath;
+}
+
 type SidebarProps = {
   rootPath: string | null;
   tree: DirectoryNode[];
   activePath: string | null;
   recentFiles: string[];
+  activeThemeName: string;
+  noteCount: number;
   onOpenFile: (filePath: string) => void;
+  onCreateNote: () => void;
+  onOpenPalette: () => void;
   onOpenSettings: () => void;
 };
 
@@ -52,13 +64,51 @@ function TreeNode({
   );
 }
 
-export function Sidebar({ rootPath, tree, activePath, recentFiles, onOpenFile, onOpenSettings }: SidebarProps) {
+export function Sidebar({
+  rootPath,
+  tree,
+  activePath,
+  recentFiles,
+  activeThemeName,
+  noteCount,
+  onOpenFile,
+  onCreateNote,
+  onOpenPalette,
+  onOpenSettings
+}: SidebarProps) {
+  const workspaceName = getBaseName(rootPath) ?? "Documents / Typist";
+
   return (
     <aside className="sidebar">
-      <div>
+      <div className="sidebar-brand">
+        <div className="sidebar-brand-mark" aria-hidden="true">
+          <span className="sidebar-brand-dot" />
+          <span className="sidebar-brand-dot" />
+          <span className="sidebar-brand-dot" />
+        </div>
         <p className="sidebar-eyebrow">Workspace</p>
         <h1>Typist</h1>
-        <p className="sidebar-caption">{rootPath ? rootPath.split("/").at(-1) : "Documents / Typist"}</p>
+        <p className="sidebar-caption">{workspaceName}</p>
+      </div>
+
+      <div className="sidebar-summary">
+        <div className="sidebar-stat">
+          <span className="sidebar-stat-value">{noteCount}</span>
+          <span className="sidebar-stat-label">notes</span>
+        </div>
+        <div className="sidebar-stat">
+          <span className="sidebar-stat-value">{activeThemeName}</span>
+          <span className="sidebar-stat-label">theme</span>
+        </div>
+      </div>
+
+      <div className="sidebar-actions">
+        <button className="sidebar-primary-action" type="button" onClick={onCreateNote}>
+          New note
+        </button>
+        <button className="sidebar-secondary-action" type="button" onClick={onOpenPalette}>
+          Open palette
+        </button>
       </div>
 
       <div className="sidebar-section">
@@ -68,7 +118,7 @@ export function Sidebar({ rootPath, tree, activePath, recentFiles, onOpenFile, o
         ) : (
           recentFiles.map((filePath) => (
             <button key={filePath} className="sidebar-file recent" type="button" onClick={() => onOpenFile(filePath)}>
-              <span>{filePath.split("/").at(-1)}</span>
+              <span>{getBaseName(filePath)}</span>
             </button>
           ))
         )}

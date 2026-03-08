@@ -21,6 +21,7 @@ let mainWindow: BrowserWindow | null = null;
 let activeWatcher: ReturnType<typeof watch> | null = null;
 let activeWorkspaceRoot: string | null = null;
 let searchableFilesCache: string[] = [];
+let settingsUpdatePromise: Promise<AppSettings> | null = null;
 
 function isMarkdownFile(fileName: string) {
   return fileName.endsWith(".md") || fileName.endsWith(".markdown");
@@ -43,15 +44,87 @@ function getDefaultSettings(): AppSettings {
   };
 }
 
+function isThemeMode(value: unknown): value is AppSettings["themeMode"] {
+  return value === "light" || value === "dark";
+}
+
+function sanitizeSettings(input: unknown): AppSettings {
+  const defaults = getDefaultSettings();
+
+  if (!input || typeof input !== "object") {
+    return defaults;
+  }
+
+  const candidate = input as Partial<AppSettings>;
+
+  return {
+    defaultWorkspacePath:
+      typeof candidate.defaultWorkspacePath === "string" && candidate.defaultWorkspacePath.trim().length > 0
+        ? candidate.defaultWorkspacePath
+        : defaults.defaultWorkspacePath,
+    themeId: typeof candidate.themeId === "string" && candidate.themeId.trim().length > 0 ? candidate.themeId : defaults.themeId,
+    themeMode: isThemeMode(candidate.themeMode) ? candidate.themeMode : defaults.themeMode,
+    recentFiles: Array.isArray(candidate.recentFiles) ? candidate.recentFiles.filter((entry): entry is string => typeof entry === "string") : defaults.recentFiles
+  };
+}
+
+function sanitizeSettingsPatch(patch: unknown): Partial<AppSettings> {
+  if (!patch || typeof patch !== "object" || Array.isArray(patch)) {
+    throw new Error("Invalid settings payload.");
+  }
+
+  const candidate = patch as Record<string, unknown>;
+  const nextPatch: Partial<AppSettings> = {};
+
+  if ("defaultWorkspacePath" in candidate) {
+    if (typeof candidate.defaultWorkspacePath !== "string" || candidate.defaultWorkspacePath.trim().length === 0) {
+      throw new Error("defaultWorkspacePath must be a non-empty string.");
+    }
+
+    nextPatch.defaultWorkspacePath = candidate.defaultWorkspacePath;
+  }
+
+  if ("themeId" in candidate) {
+    if (typeof candidate.themeId !== "string" || candidate.themeId.trim().length === 0) {
+      throw new Error("themeId must be a non-empty string.");
+    }
+
+    nextPatch.themeId = candidate.themeId;
+  }
+
+  if ("themeMode" in candidate) {
+    if (!isThemeMode(candidate.themeMode)) {
+      throw new Error("themeMode must be 'light' or 'dark'.");
+    }
+
+    nextPatch.themeMode = candidate.themeMode;
+  }
+
+  if ("recentFiles" in candidate) {
+    if (!Array.isArray(candidate.recentFiles) || candidate.recentFiles.some((entry) => typeof entry !== "string")) {
+      throw new Error("recentFiles must be an array of strings.");
+    }
+
+    nextPatch.recentFiles = candidate.recentFiles;
+  }
+
+  const invalidKeys = Object.keys(candidate).filter(
+    (key) => !["defaultWorkspacePath", "themeId", "themeMode", "recentFiles"].includes(key)
+  );
+
+  if (invalidKeys.length > 0) {
+    throw new Error(`Unsupported settings keys: ${invalidKeys.join(", ")}`);
+  }
+
+  return nextPatch;
+}
+
 async function loadSettings(): Promise<AppSettings> {
   const settingsPath = getSettingsPath();
 
   try {
     const raw = await fs.readFile(settingsPath, "utf8");
-    return {
-      ...getDefaultSettings(),
-      ...JSON.parse(raw)
-    } satisfies AppSettings;
+    return sanitizeSettings(JSON.parse(raw));
   } catch {
     return getDefaultSettings();
   }
@@ -64,11 +137,15 @@ async function saveSettings(nextSettings: AppSettings) {
 }
 
 async function updateSettings(patch: Partial<AppSettings>) {
-  const current = await loadSettings();
-  return saveSettings({
-    ...current,
-    ...patch
+  settingsUpdatePromise = (settingsUpdatePromise ?? Promise.resolve(getDefaultSettings())).then(async () => {
+    const current = await loadSettings();
+    return saveSettings({
+      ...current,
+      ...patch
+    });
   });
+
+  return settingsUpdatePromise;
 }
 
 async function recordRecentFile(filePath: string) {
@@ -406,7 +483,10 @@ ipcMain.handle("workspace:openDocument", async () => {
 
 ipcMain.handle("settings:get", async () => loadSettings());
 
-ipcMain.handle("settings:update", async (_event, patch: Partial<AppSettings>) => updateSettings(patch));
+ipcMain.handle("settings:update", async (_event, patch: unknown) => {
+  const sanitizedPatch = sanitizeSettingsPatch(patch);
+  return updateSettings(sanitizedPatch);
+});
 
 app.whenReady().then(createWindow).catch((error) => {
   console.error("Failed to create initial window:", error);
