@@ -1,0 +1,16 @@
+{
+  "name": "typist",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.26.0",
+  "scripts": {
+    "dev:desktop": "pnpm --filter @typist/desktop dev",
+    "dev:web": "pnpm --filter @typist/web dev",
+    "build": "pnpm -r build",
+    "build:desktop": "pnpm --filter @typist/desktop build",
+    "build:web": "pnpm --filter @typist/web build",
+    "typecheck": "pnpm -r typecheck",
+    "typecheck:desktop": "pnpm --filter @typist/desktop typecheck",
+    "typecheck:web": "pnpm --filter @typist/web typecheck"
+  }
+}

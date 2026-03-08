@@ -1,0 +1,314 @@
+import { useEffect } from "react";
+import { EditorPane } from "./components/EditorPane";
+import { MarkdownPreview } from "./components/MarkdownPreview";
+import { Sidebar } from "./components/Sidebar";
+import { useWorkspaceStore } from "./store/workspace";
+
+export function App() {
+  return <DesktopApp typist={window.typist!} />;
+}
+
+function DesktopApp({ typist }: { typist: NonNullable<Window["typist"]> }) {
+  const {
+    rootPath,
+    tree,
+    activeFile,
+    draftContent,
+    isDirty,
+    isSaving,
+    lastSavedAt,
+    error,
+    setWorkspace,
+    setTree,
+    setActiveFile,
+    updateDraftContent,
+    markSaved,
+    setSaving,
+    setError
+  } = useWorkspaceStore();
+
+  useEffect(() => {
+    return typist.onWorkspaceChanged(async ({ tree: nextTree, changedPath }) => {
+      setTree(nextTree);
+
+      if (changedPath === activeFile?.path && !isDirty) {
+        const refreshedFile = await typist.readFile(changedPath);
+        setActiveFile(refreshedFile);
+      }
+    });
+  }, [activeFile?.path, isDirty, setActiveFile, setTree, typist]);
+
+  const confirmDiscardChanges = () => {
+    if (!isDirty) {
+      return true;
+    }
+
+    return window.confirm("You have unsaved changes. Discard them?");
+  };
+
+  const handleSave = async () => {
+    if (!activeFile) {
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const savedFile = await typist.saveFile(activeFile.path, draftContent);
+      markSaved(savedFile);
+    } catch (saveError) {
+      setSaving(false);
+      setError(saveError instanceof Error ? saveError.message : "Unable to save file.");
+    }
+  };
+
+  useEffect(() => {
+    if (!activeFile || !isDirty || isSaving) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      void handleSave();
+    }, 900);
+
+    return () => window.clearTimeout(timer);
+  }, [activeFile?.path, draftContent, isDirty, isSaving]);
+
+  const handleOpenFolder = async () => {
+    if (!confirmDiscardChanges()) {
+      return;
+    }
+
+    try {
+      const workspace = await typist.openFolder();
+      if (workspace) {
+        setWorkspace(workspace);
+      }
+    } catch (openError) {
+      setError(openError instanceof Error ? openError.message : "Unable to open folder.");
+    }
+  };
+
+  const handleOpenDocument = async () => {
+    if (!confirmDiscardChanges()) {
+      return;
+    }
+
+    try {
+      const file = await typist.openDocument();
+      if (file) {
+        setWorkspace({
+          rootPath: file.path,
+          tree: [],
+          activeFile: file
+        });
+      }
+    } catch (openError) {
+      setError(openError instanceof Error ? openError.message : "Unable to open file.");
+    }
+  };
+
+  const handleFileOpen = async (filePath: string) => {
+    if (filePath === activeFile?.path) {
+      return;
+    }
+
+    if (!confirmDiscardChanges()) {
+      return;
+    }
+
+    try {
+      const file = await typist.readFile(filePath);
+      setActiveFile(file);
+    } catch (openError) {
+      setError(openError instanceof Error ? openError.message : "Unable to read file.");
+    }
+  };
+
+  const resolveCurrentDirectory = () => {
+    if (activeFile?.path) {
+      return activeFile.path.split("/").slice(0, -1).join("/");
+    }
+
+    return rootPath;
+  };
+
+  const handleCreateFile = async () => {
+    const parentDir = resolveCurrentDirectory();
+
+    if (!parentDir) {
+      setError("Open a folder before creating a file.");
+      return;
+    }
+
+    const nextName = window.prompt("New markdown file name", "untitled.md");
+    if (!nextName) {
+      return;
+    }
+
+    try {
+      const file = await typist.createFile(parentDir, nextName);
+      setActiveFile(file);
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : "Unable to create file.");
+    }
+  };
+
+  const handleCreateFolder = async () => {
+    const parentDir = resolveCurrentDirectory();
+
+    if (!parentDir || !rootPath) {
+      setError("Open a folder before creating a folder.");
+      return;
+    }
+
+    const nextName = window.prompt("New folder name", "notes");
+    if (!nextName) {
+      return;
+    }
+
+    try {
+      const nextTree = await typist.createFolder(parentDir, nextName);
+      setTree(nextTree);
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : "Unable to create folder.");
+    }
+  };
+
+  useEffect(() => {
+    const onKeyDown = async (event: KeyboardEvent) => {
+      const modifier = event.metaKey || event.ctrlKey;
+
+      if (!modifier) {
+        return;
+      }
+
+      if (event.key.toLowerCase() === "o" && !event.shiftKey) {
+        event.preventDefault();
+        await handleOpenDocument();
+      }
+
+      if (event.key.toLowerCase() === "o" && event.shiftKey) {
+        event.preventDefault();
+        await handleOpenFolder();
+      }
+
+      if (event.key.toLowerCase() === "s" && activeFile && isDirty) {
+        event.preventDefault();
+        await handleSave();
+      }
+
+      if (event.key.toLowerCase() === "n" && !event.shiftKey) {
+        event.preventDefault();
+        await handleCreateFile();
+      }
+
+      if (event.key.toLowerCase() === "n" && event.shiftKey) {
+        event.preventDefault();
+        await handleCreateFolder();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [activeFile, isDirty, rootPath, typist]);
+
+  useEffect(() => {
+    return typist.onCommand(async (command) => {
+      if (command === "open-file") {
+        await handleOpenDocument();
+        return;
+      }
+
+      if (command === "open-folder") {
+        await handleOpenFolder();
+        return;
+      }
+
+      if (command === "save") {
+        await handleSave();
+        return;
+      }
+
+      if (command === "new-file") {
+        await handleCreateFile();
+        return;
+      }
+
+      if (command === "new-folder") {
+        await handleCreateFolder();
+      }
+    });
+  }, [activeFile, draftContent, isDirty, rootPath, typist]);
+
+  useEffect(() => {
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!isDirty) {
+        return;
+      }
+
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [isDirty]);
+
+  const saveStateLabel = isSaving
+    ? "Saving changes..."
+    : isDirty
+      ? "Unsaved changes"
+      : lastSavedAt
+        ? `Saved ${new Date(lastSavedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`
+        : "Open a markdown file to start editing";
+
+  return (
+    <div className="app-shell">
+      <Sidebar
+        rootPath={rootPath}
+        tree={tree}
+        activePath={activeFile?.path ?? null}
+        onOpenFile={handleFileOpen}
+      />
+      <main className="workspace-shell">
+        <header className="hero">
+          <div>
+            <p className="hero-eyebrow">Minimal Markdown Workspace</p>
+            <h1>Typist</h1>
+            <p className="hero-copy">
+              The desktop app now supports workspace browsing, markdown editing, live preview, autosave, and quick
+              creation of files and folders while the richer inline editor is still in progress.
+            </p>
+          </div>
+          <div className="hero-actions">
+            <button className="secondary-button" onClick={handleCreateFile} type="button">
+              New File
+            </button>
+            <button className="secondary-button" onClick={handleCreateFolder} type="button">
+              New Folder
+            </button>
+            <button className="secondary-button" onClick={handleOpenDocument} type="button">
+              Open File
+            </button>
+            <button className="primary-button" onClick={handleOpenFolder} type="button">
+              Open Folder
+            </button>
+          </div>
+        </header>
+        {error ? <div className="error-banner">{error}</div> : null}
+        <section className="workspace-panels">
+          <EditorPane
+            content={draftContent}
+            path={activeFile?.path ?? null}
+            isDirty={isDirty}
+            isSaving={isSaving}
+            saveStateLabel={saveStateLabel}
+            onChange={updateDraftContent}
+            onSave={handleSave}
+          />
+          <MarkdownPreview content={draftContent} />
+        </section>
+      </main>
+    </div>
+  );
+}
