@@ -1,17 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import Image from "@tiptap/extension-image";
-import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
-import { Table } from "@tiptap/extension-table";
-import TableCell from "@tiptap/extension-table-cell";
-import TableHeader from "@tiptap/extension-table-header";
-import TableRow from "@tiptap/extension-table-row";
-import TaskItem from "@tiptap/extension-task-item";
-import TaskList from "@tiptap/extension-task-list";
 import StarterKit from "@tiptap/starter-kit";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { Markdown } from "tiptap-markdown";
-import { SlashCommand } from "./SlashCommand";
 
 type MarkdownEditorProps = {
   content: string;
@@ -24,8 +15,6 @@ type MarkdownEditorProps = {
   onToggleSidebar?: () => void;
   isSidebarCollapsed?: boolean;
   onCreateNote?: () => void;
-  toggleSidebarShortcut?: string;
-  newNoteShortcut?: string;
 };
 
 export function MarkdownEditor({
@@ -38,9 +27,7 @@ export function MarkdownEditor({
   onChange,
   onToggleSidebar,
   isSidebarCollapsed,
-  onCreateNote,
-  toggleSidebarShortcut,
-  newNoteShortcut
+  onCreateNote
 }: MarkdownEditorProps) {
   const lastSyncedMarkdown = useRef(content);
   const editor = useEditor({
@@ -51,39 +38,11 @@ export function MarkdownEditor({
           levels: [1, 2, 3, 4]
         }
       }),
-      Link.configure({
-        autolink: true,
-        linkOnPaste: true,
-        openOnClick: false,
-        HTMLAttributes: {
-          rel: "noopener noreferrer nofollow",
-          target: "_blank"
-        }
-      }),
-      Image,
-      TaskList,
-      TaskItem.configure({
-        nested: true
-      }),
-      Table.configure({
-        resizable: true
-      }),
-      TableRow,
-      TableHeader,
-      TableCell,
-      SlashCommand,
       Placeholder.configure({
         placeholder: "Start with a title, then let markdown shortcuts shape the page."
       }),
-      Markdown.configure({
-        linkify: true,
-        transformPastedText: true,
-        transformCopiedText: true,
-        breaks: true
-      })
+      Markdown
     ],
-    enableInputRules: true,
-    enablePasteRules: true,
     content: content,
     editorProps: {
       attributes: {
@@ -155,7 +114,7 @@ export function MarkdownEditor({
             <button
               className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors mr-1"
               onClick={onToggleSidebar}
-               title={isSidebarCollapsed ? `Show Sidebar (${toggleSidebarShortcut ?? "⌘B"})` : `Hide Sidebar (${toggleSidebarShortcut ?? "⌘B"})`}
+              title={isSidebarCollapsed ? "Show Sidebar" : "Hide Sidebar"}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 {isSidebarCollapsed ? (
@@ -176,7 +135,7 @@ export function MarkdownEditor({
             <button 
               className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors" 
               onClick={onCreateNote}
-               title={`New Note (${newNoteShortcut ?? "⌘N"})`}
+              title="New Note (⌘N)"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
             </button>

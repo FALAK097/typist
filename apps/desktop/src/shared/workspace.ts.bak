@@ -58,7 +58,7 @@ export type AppSettings = {
   shortcuts: ShortcutSetting[];
 };
 
-export type AppCommand = "open-file" | "open-folder" | "save" | "new-file" | "new-folder" | "search" | "quick-open" | "toggle-sidebar";
+export type AppCommand = "open-file" | "open-folder" | "save" | "new-file" | "new-folder" | "search" | "quick-open";
 
 export type ExternalFileTarget = {
   path: string;
