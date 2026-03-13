@@ -2,7 +2,21 @@
   "name": "@typist/desktop",
   "version": "0.1.0",
   "private": true,
-  "description": "Typist desktop markdown editor.",
+  "description": "Typist - A minimal markdown viewer and editor for macOS and Windows. Browse local notes, edit markdown fast, and read rendered documents in a focused desktop workspace.",
+  "author": "Falak Gala",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FALAK097/typist.git"
+  },
+  "keywords": [
+    "markdown",
+    "editor",
+    "notes",
+    "desktop",
+    "electron",
+    "minimal",
+    "productivity"
+  ],
   "main": "dist-electron/electron/main.js",
   "type": "module",
   "scripts": {
@@ -12,14 +26,26 @@
     "lint": "eslint . --ext ts,tsx"
   },
   "dependencies": {
+    "@tiptap/core": "^3.20.1",
+    "@tiptap/extension-image": "^3.20.1",
+    "@tiptap/extension-link": "^3.20.1",
     "@tiptap/extension-placeholder": "^3.20.1",
+    "@tiptap/extension-table": "^3.20.1",
+    "@tiptap/extension-table-cell": "^3.20.1",
+    "@tiptap/extension-table-header": "^3.20.1",
+    "@tiptap/extension-table-row": "^3.20.1",
+    "@tiptap/extension-task-item": "^3.20.1",
+    "@tiptap/extension-task-list": "^3.20.1",
     "@tiptap/pm": "^3.20.1",
     "@tiptap/react": "^3.20.1",
     "@tiptap/starter-kit": "^3.20.1",
+    "@tiptap/suggestion": "^3.20.1",
     "chokidar": "^4.0.3",
     "electron": "^35.0.0",
+    "html2pdf.js": "^0.14.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "tippy.js": "^6.3.7",
     "tiptap-markdown": "^0.9.0",
     "zustand": "^5.0.3"
   },

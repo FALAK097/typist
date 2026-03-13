@@ -1,22 +1,24 @@
 import type { AppSettings, ShortcutSetting, ThemeMode } from "../shared/workspace";
 import { useState, useEffect, useRef } from "react";
+import { DEFAULT_SHORTCUTS, canonicalizeShortcut, mergeShortcutSettings } from "../shared/shortcuts";
 
-type Shortcut = {
-  id: string;
-  label: string;
-  keys: string;
-};
 
-const DEFAULT_SHORTCUTS: Shortcut[] = [
-  { id: "command-palette", label: "Command Palette", keys: "⌘ P" },
-  { id: "new-note", label: "New Note", keys: "⇧ ⌘ S" },
-  { id: "open-file", label: "Open File", keys: "⌘ O" },
-  { id: "open-folder", label: "Open Folder", keys: "⇧ ⌘ O" },
-  { id: "save", label: "Save", keys: "⌘ S" },
-  { id: "settings", label: "Settings", keys: "⌘ ," },
-  { id: "previous-note", label: "Previous Note", keys: "⌥ ↑" },
-  { id: "next-note", label: "Next Note", keys: "⌥ ↓" },
-];
+function CustomSelect({ value, onChange, options }: { value: string; onChange: (val: string) => void; options: { value: string; label: string }[] }) {
+  return (
+    <select
+      aria-label="Theme mode"
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      className="w-[120px] bg-background border border-border rounded-md px-3 py-1.5 text-sm font-medium focus:ring-2 focus:ring-primary/20"
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  );
+}
 
 type SettingsPanelProps = {
   isOpen: boolean;
@@ -36,20 +38,15 @@ export function SettingsPanel({
   onChangeShortcuts
 }: SettingsPanelProps) {
   const [activeTab, setActiveTab] = useState("general");
-  const [shortcuts, setShortcuts] = useState<Shortcut[]>(DEFAULT_SHORTCUTS);
+  const [shortcuts, setShortcuts] = useState(DEFAULT_SHORTCUTS);
   const [editingShortcut, setEditingShortcut] = useState<string | null>(null);
   const [capturedKeys, setCapturedKeys] = useState<string>("");
   const [shortcutFilter, setShortcutFilter] = useState("");
+  const [shortcutError, setShortcutError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (settings?.shortcuts && settings.shortcuts.length > 0) {
-      const merged = DEFAULT_SHORTCUTS.map((defaultShortcut) => {
-        const saved = settings.shortcuts.find((s) => s.id === defaultShortcut.id);
-        return saved ? { ...defaultShortcut, keys: saved.keys } : defaultShortcut;
-      });
-      setShortcuts(merged);
-    }
+    setShortcuts(mergeShortcutSettings(settings?.shortcuts));
   }, [settings]);
 
   useEffect(() => {
@@ -63,27 +60,53 @@ export function SettingsPanel({
     if (e.metaKey || e.ctrlKey) parts.push("⌘");
     if (e.altKey) parts.push("⌥");
     if (e.shiftKey) parts.push("⇧");
-    const key = e.key.toUpperCase();
-    if (!["META", "CONTROL", "ALT", "SHIFT", " "].includes(key)) {
-      parts.push(key === " " ? "Space" : key);
+    const key = e.key;
+    if (!["Meta", "Control", "Alt", "Shift"].includes(key)) {
+      parts.push(key);
     }
-    return parts.join(" ");
+    return canonicalizeShortcut(parts.join(" ")) ?? parts.join(" ");
+  };
+
+  const commitShortcutChange = (shortcutId: string, nextKeys: string) => {
+    const normalizedKeys = canonicalizeShortcut(nextKeys);
+
+    if (!normalizedKeys) {
+      setShortcutError("Shortcut must include at least one non-modifier key.");
+      return false;
+    }
+
+    const conflict = shortcuts.find(
+      (shortcut) => shortcut.id !== shortcutId && canonicalizeShortcut(shortcut.keys) === normalizedKeys
+    );
+
+    if (conflict) {
+      setShortcutError(`${normalizedKeys} is already assigned to ${conflict.label}.`);
+      return false;
+    }
+
+    const updated = shortcuts.map((shortcut) =>
+      shortcut.id === shortcutId ? { ...shortcut, keys: normalizedKeys } : shortcut
+    );
+    setShortcuts(updated);
+    onChangeShortcuts(updated.map(({ id, keys }) => ({ id, keys })));
+    setShortcutError(null);
+    return true;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     e.preventDefault();
+    e.stopPropagation();
     if (e.key === "Escape") {
       setEditingShortcut(null);
       setCapturedKeys("");
+      setShortcutError(null);
       return;
     }
     if (e.key === "Enter") {
       if (capturedKeys && editingShortcut) {
-        const updated = shortcuts.map(s => 
-          s.id === editingShortcut ? { ...s, keys: capturedKeys } : s
-        );
-        setShortcuts(updated);
-        onChangeShortcuts(updated.map(({ id, keys }) => ({ id, keys })));
+        if (!commitShortcutChange(editingShortcut, capturedKeys)) {
+          return;
+        }
       }
       setEditingShortcut(null);
       setCapturedKeys("");
@@ -92,18 +115,13 @@ export function SettingsPanel({
     setCapturedKeys(formatKeyCombo(e));
   };
 
-  const handleShortcutChange = (shortcutId: string, newKeys: string) => {
-    const updated = shortcuts.map(s => 
-      s.id === shortcutId ? { ...s, keys: newKeys } : s
-    );
-    setShortcuts(updated);
-    onChangeShortcuts(updated.map(({ id, keys }) => ({ id, keys })));
-  };
-
   const handleReset = () => {
     setShortcuts(DEFAULT_SHORTCUTS);
     onChangeShortcuts(DEFAULT_SHORTCUTS.map(({ id, keys }) => ({ id, keys })));
     setShortcutFilter("");
+    setCapturedKeys("");
+    setEditingShortcut(null);
+    setShortcutError(null);
   };
 
   if (!isOpen || !settings) {
@@ -118,7 +136,7 @@ export function SettingsPanel({
   return (
     <section className="modal-shell" role="presentation" onMouseDown={onClose}>
       <div
-        className="modal-card settings-card w-full max-w-[1300px] h-[750px] bg-background border border-border shadow-xl rounded-xl flex overflow-hidden p-0 relative"
+        className="w-full max-w-[900px] h-[550px] max-h-[85vh] bg-background border border-border shadow-xl rounded-xl flex overflow-hidden p-0 relative"
         role="dialog"
         aria-modal="true"
         onMouseDown={(event) => event.stopPropagation()}
@@ -159,20 +177,20 @@ export function SettingsPanel({
           {activeTab === 'general' && (
             <div className="space-y-12 max-w-3xl">
               <div>
-                <h2 className="text-2xl font-semibold mb-6">General</h2>
+                <h2 className="text-lg font-medium mb-6">General</h2>
                 
                 <div className="space-y-6">
-                  <div className="flex items-center justify-between py-4 border-b border-border/40">
-                    <div className="space-y-1">
+                  <div className="flex items-center justify-between py-4 border-b border-border/40 gap-8">
+                    <div className="space-y-1 shrink-0">
                       <p className="text-sm font-medium">Default notes folder</p>
                       <p className="text-xs text-muted-foreground">Where your new notes will be saved</p>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-xs text-muted-foreground font-mono bg-muted/30 px-2 py-1 rounded max-w-[300px] truncate" title={settings.defaultWorkspacePath}>
+                    <div className="flex items-center gap-4 min-w-0 flex-1 justify-end">
+                      <div className="text-xs text-muted-foreground font-mono bg-muted/30 px-2 py-1 rounded truncate" title={settings.defaultWorkspacePath}>
                         {settings.defaultWorkspacePath}
                       </div>
                       <button 
-                        className="px-3 py-1.5 bg-background border border-border rounded-md text-xs font-medium hover:bg-muted transition-colors shadow-sm" 
+                        className="px-3 py-1.5 bg-background border border-border rounded-md text-xs font-medium hover:bg-muted transition-colors shadow-sm shrink-0" 
                         type="button" 
                         onClick={onChooseFolder}
                       >
@@ -181,26 +199,21 @@ export function SettingsPanel({
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between py-4 border-b border-border/40">
-                     <div className="space-y-1">
+                  <div className="flex items-center justify-between py-4 border-b border-border/40 gap-8">
+                     <div className="space-y-1 shrink-0">
                         <p className="text-sm font-medium">Appearance</p>
                         <p className="text-xs text-muted-foreground">Customise how Typist looks on your device</p>
                      </div>
                      <div className="relative">
-                        <select 
-                          value={settings.themeMode}
-                          onChange={(e) => onChangeMode(e.target.value as ThemeMode)}
-                          className="appearance-none bg-background border border-border rounded-md pl-3 pr-8 py-1.5 text-sm font-medium hover:bg-muted/50 transition-colors cursor-pointer outline-none focus:ring-2 focus:ring-primary/20"
-                        >
-                          <option value="light">Light</option>
-                          <option value="dark">Dark</option>
-                          <option value="system">System</option>
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
-                          <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                          </svg>
-                        </div>
+                        <CustomSelect 
+                          value={settings.themeMode} 
+                          onChange={(val) => onChangeMode(val as ThemeMode)}
+                          options={[
+                            { value: 'light', label: 'Light' },
+                            { value: 'dark', label: 'Dark' },
+                            { value: 'system', label: 'System' }
+                          ]}
+                        />
                      </div>
                   </div>
                 </div>
@@ -210,7 +223,7 @@ export function SettingsPanel({
           {activeTab === 'shortcuts' && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-semibold">Keyboard Shortcuts</h2>
+                <h2 className="text-lg font-medium">Keyboard Shortcuts</h2>
                 <button
                   className="text-xs font-medium text-muted-foreground hover:text-foreground px-3 py-1.5 border border-border rounded hover:bg-muted transition-colors"
                   onClick={handleReset}
@@ -252,7 +265,7 @@ export function SettingsPanel({
                           onKeyDown={handleKeyDown}
                           onBlur={() => {
                             if (capturedKeys && editingShortcut) {
-                              handleShortcutChange(editingShortcut, capturedKeys);
+                              commitShortcutChange(editingShortcut, capturedKeys);
                             }
                             setEditingShortcut(null);
                             setCapturedKeys("");
@@ -263,7 +276,11 @@ export function SettingsPanel({
                       ) : (
                         <button
                           className="px-2 py-1 bg-muted/50 hover:bg-muted rounded text-xs font-mono transition-colors min-w-[80px] text-center border border-border/50 hover:border-border"
-                          onClick={() => setEditingShortcut(shortcut.id)}
+                          onClick={() => {
+                            setEditingShortcut(shortcut.id);
+                            setCapturedKeys(shortcut.keys);
+                            setShortcutError(null);
+                          }}
                         >
                           {shortcut.keys}
                         </button>
@@ -276,12 +293,13 @@ export function SettingsPanel({
                      </div>
                   )}
                 </div>
+                {shortcutError ? <p className="mt-3 text-sm text-destructive">{shortcutError}</p> : null}
               </div>
             </div>
           )}
         </div>
         <button 
-          className="absolute top-6 right-6 p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+          className="absolute top-4 right-4 p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
           onClick={onClose}
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>

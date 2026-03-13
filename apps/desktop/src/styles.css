@@ -2,6 +2,20 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Base Styles */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  font-family: var(--font-sans);
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.1450 0 0);
@@ -151,22 +165,33 @@
 
 /* Base Layout without bubbles */
 .app-shell {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
+  transition: grid-template-columns 200ms ease;
   background-color: var(--background);
   color: var(--foreground);
+}
+
+.app-shell.collapsed {
+  grid-template-columns: 56px minmax(0, 1fr);
 }
 
 .sidebar {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 44px 18px 18px; /* Extra top padding for macOS traffic lights */
+  padding: 0 18px 18px; /* No extra top padding - header handles spacing */
   background-color: var(--sidebar);
   color: var(--sidebar-foreground);
   border-right: 1px solid var(--border);
-  overflow-y: auto;
+  overflow: hidden;
+}
+
+.collapsed-sidebar {
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .sidebar-actions {
@@ -211,6 +236,8 @@
 .sidebar-section {
   display: grid;
   gap: 8px;
+  overflow: hidden;
+  width: 100%;
 }
 
 .sidebar-section-title {
@@ -225,6 +252,7 @@
 .sidebar-tree {
   min-height: 0;
   padding-right: 4px;
+  overflow-x: hidden;
 }
 
 .sidebar-file,
@@ -242,6 +270,12 @@
 .sidebar-node {
   display: grid;
   gap: 2px;
+}
+
+.sidebar-node .group {
+  /* Dropdown uses position:fixed so overflow:hidden is safe here */
+  overflow: hidden;
+  min-width: 0;
 }
 
 .sidebar-directory {
@@ -288,13 +322,16 @@
 .workspace-shell {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100%;
+  overflow: hidden;
   position: relative;
   background-color: var(--background);
 }
 
 .editor-shell {
   flex: 1;
+  min-height: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -335,8 +372,24 @@
 
 .editor-canvas {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   position: relative;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.editor-canvas::-webkit-scrollbar {
+  display: none;
+}
+
+.sidebar-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 .tiptap-editor {
@@ -385,6 +438,51 @@
   padding-left: 1.5em;
 }
 
+.tiptap-editor ul {
+  list-style: disc;
+}
+
+.tiptap-editor ol {
+  list-style: decimal;
+}
+
+.tiptap-editor li {
+  margin: 0.2em 0;
+}
+
+.tiptap-editor ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+}
+
+.tiptap-editor ul[data-type="taskList"] li {
+  display: flex;
+  gap: 0.6em;
+  align-items: flex-start;
+}
+
+.tiptap-editor ul[data-type="taskList"] li > label {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0.2em;
+}
+
+.tiptap-editor ul[data-type="taskList"] li > div {
+  flex: 1;
+}
+
+.tiptap-editor strong {
+  font-weight: 700;
+}
+
+.tiptap-editor em {
+  font-style: italic;
+}
+
+.tiptap-editor s {
+  text-decoration: line-through;
+}
+
 .tiptap-editor blockquote {
   padding-left: 1em;
   border-left: 3px solid var(--border);
@@ -425,37 +523,155 @@
   margin: 2em 0;
 }
 
-/* Footer Metrics (Bottom Right) */
-.editor-footer {
-  position: absolute;
-  bottom: 24px;
-  right: 40px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  z-index: 10;
-  background: var(--background);
+.tiptap-editor table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1.25em;
 }
 
-.editor-status {
-  margin: 0;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: var(--secondary);
-  color: var(--secondary-foreground);
-  font-size: 0.75rem;
-  font-weight: 500;
+.tiptap-editor th,
+.tiptap-editor td {
   border: 1px solid var(--border);
+  padding: 0.5em 0.75em;
+  vertical-align: top;
 }
 
-.editor-metrics {
-  display: flex;
-  gap: 8px;
+.tiptap-editor th {
+  background: var(--muted);
+  font-weight: 600;
 }
 
-.editor-metrics span {
+.tiptap-editor img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+}
+
+.slash-menu {
+  width: 320px;
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+}
+
+.slash-menu-item {
+  width: 100%;
+  text-align: left;
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: grid;
+  gap: 2px;
+}
+
+.slash-menu-item:hover,
+.slash-menu-item.is-active {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.slash-menu-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.slash-menu-description {
   font-size: 0.75rem;
   color: var(--muted-foreground);
+}
+
+.slash-menu-item:hover .slash-menu-description,
+.slash-menu-item.is-active .slash-menu-description {
+  color: inherit;
+  opacity: 0.8;
+}
+
+.slash-menu-empty {
+  margin: 0;
+  padding: 10px;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+}
+
+/* Footer Metrics (Bottom Right) */
+/* The footer is now styled with Tailwind directly in MarkdownEditor.tsx */
+
+.toast-card {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 360px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 80;
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.toast-icon {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  color: var(--foreground);
+  flex-shrink: 0;
+}
+
+.toast-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.toast-title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--foreground);
+  line-height: 1.4;
+}
+
+.toast-description {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--muted-foreground);
+  word-break: break-word;
+  margin-top: 2px;
+}
+
+.toast-dismiss {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  color: var(--muted-foreground);
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+.toast-dismiss:hover {
+  background: var(--accent);
+  color: var(--accent-foreground);
 }
 
 /* Modals */
@@ -699,4 +915,46 @@
   background: var(--destructive);
   color: var(--destructive-foreground);
   font-size: 0.875rem;
+}
+
+/* Boot Error Styles */
+.boot-error-shell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: var(--background);
+  color: var(--foreground);
+  padding: 24px;
+}
+
+.boot-error-card {
+  max-width: 600px;
+  padding: 40px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+}
+
+.boot-error-card h1 {
+  margin: 16px 0 8px;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.boot-error-card p {
+  margin: 8px 0;
+  color: var(--foreground);
+  line-height: 1.6;
+}
+
+.boot-error-card code {
+  padding: 2px 6px;
+  background: var(--muted);
+  color: var(--foreground);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.875em;
 }
