@@ -2,13 +2,17 @@ import { Extension } from "@tiptap/core";
 import Suggestion, {
   type SuggestionKeyDownProps,
   type SuggestionOptions,
-  type SuggestionProps
+  type SuggestionProps,
 } from "@tiptap/suggestion";
 import { ReactRenderer } from "@tiptap/react";
 import tippy, { type Instance, type Props } from "tippy.js";
 import "tippy.js/dist/tippy.css";
 import { SlashCommandList } from "./slash-command-list";
-import type { SlashCommandItem, SlashCommandListHandle, SlashCommandWithKey } from "../types/slash-command";
+import type {
+  SlashCommandItem,
+  SlashCommandListHandle,
+  SlashCommandWithKey,
+} from "../types/slash-command";
 
 /**
  * Hardcoded TipTap/StarterKit default shortcuts displayed as hints in the
@@ -19,28 +23,156 @@ import type { SlashCommandItem, SlashCommandListHandle, SlashCommandWithKey } fr
  * Windows/Linux: ⌘ → Ctrl, ⌥ → Alt
  */
 const COMMANDS: SlashCommandWithKey[] = [
-  { id: "h1",        title: "Heading 1",       description: "Large section heading",      keywords: ["h1", "heading", "title", "#"],       group: "Headings", icon: "Heading01Icon",          shortcut: "⌘⌥1" },
-  { id: "h2",        title: "Heading 2",       description: "Medium section heading",     keywords: ["h2", "heading", "##"],               group: "Headings", icon: "Heading02Icon",          shortcut: "⌘⌥2" },
-  { id: "h3",        title: "Heading 3",       description: "Small section heading",      keywords: ["h3", "heading", "###"],              group: "Headings", icon: "Heading03Icon",          shortcut: "⌘⌥3" },
-  { id: "bullet",    title: "Bullet List",     description: "Create an unordered list",   keywords: ["list", "bullet", "ul", "-"],         group: "Lists",    icon: "BulletIcon",             shortcut: undefined },
-  { id: "ordered",   title: "Numbered List",   description: "Create an ordered list",     keywords: ["list", "number", "ordered", "ol", "1."], group: "Lists", icon: "ListViewIcon",        shortcut: undefined },
-  { id: "task",      title: "Task List",       description: "Checklist with markdown tasks", keywords: ["task", "todo", "checklist", "- [ ]"], group: "Lists", icon: "CheckListIcon",      shortcut: undefined },
-  { id: "quote",     title: "Quote",           description: "Insert blockquote",          keywords: ["quote", "blockquote", ">"],          group: "Blocks",   icon: "QuoteDownIcon",          shortcut: "⌘⇧B" },
-  { id: "codeblock", title: "Code Block",      description: "Insert fenced code block",   keywords: ["code", "pre", "```"],                group: "Blocks",   icon: "CodeSquareIcon",         shortcut: "⌘⌥C" },
-  { id: "table",     title: "Table",           description: "Insert markdown table",      keywords: ["table", "grid", "|---|"],            group: "Blocks",   icon: "Table01Icon",            shortcut: undefined },
-  { id: "rule",      title: "Horizontal Rule", description: "Insert thematic break",      keywords: ["rule", "divider", "---"],            group: "Blocks",   icon: "HorizontalResizeIcon",   shortcut: undefined },
-  { id: "bold",      title: "Bold",            description: "Mark selected text as bold", keywords: ["bold", "strong", "**"],              group: "Inline",   icon: "TextBoldIcon",           shortcut: "⌘B" },
-  { id: "italic",    title: "Italic",          description: "Mark selected text as italic", keywords: ["italic", "emphasis", "*"],         group: "Inline",   icon: "TextItalicIcon",         shortcut: "⌘I" },
-  { id: "strike",    title: "Strikethrough",   description: "Cross out selected text",    keywords: ["strike", "strikethrough", "~~"],     group: "Inline",   icon: "TextStrikethroughIcon",  shortcut: "⌘⇧S" },
-  { id: "inlinecode",title: "Inline Code",     description: "Mark selected text as code", keywords: ["inline", "code", "`"],              group: "Inline",   icon: "CodeSimpleIcon",         shortcut: "⌘E" },
-  { id: "link",      title: "Link",            description: "Insert markdown link",       keywords: ["link", "url", "[]()"],              group: "Inline",   icon: "Link01Icon",             shortcut: "⌘K" },
-  { id: "image",     title: "Image",           description: "Insert markdown image",      keywords: ["image", "img", "![]()"],            group: "Inline",   icon: "Image01Icon",            shortcut: undefined },
+  {
+    id: "h1",
+    title: "Heading 1",
+    description: "Large section heading",
+    keywords: ["h1", "heading", "title", "#"],
+    group: "Headings",
+    icon: "Heading01Icon",
+    shortcut: "⌘⌥1",
+  },
+  {
+    id: "h2",
+    title: "Heading 2",
+    description: "Medium section heading",
+    keywords: ["h2", "heading", "##"],
+    group: "Headings",
+    icon: "Heading02Icon",
+    shortcut: "⌘⌥2",
+  },
+  {
+    id: "h3",
+    title: "Heading 3",
+    description: "Small section heading",
+    keywords: ["h3", "heading", "###"],
+    group: "Headings",
+    icon: "Heading03Icon",
+    shortcut: "⌘⌥3",
+  },
+  {
+    id: "bullet",
+    title: "Bullet List",
+    description: "Create an unordered list",
+    keywords: ["list", "bullet", "ul", "-"],
+    group: "Lists",
+    icon: "BulletIcon",
+    shortcut: undefined,
+  },
+  {
+    id: "ordered",
+    title: "Numbered List",
+    description: "Create an ordered list",
+    keywords: ["list", "number", "ordered", "ol", "1."],
+    group: "Lists",
+    icon: "ListViewIcon",
+    shortcut: undefined,
+  },
+  {
+    id: "task",
+    title: "Task List",
+    description: "Checklist with markdown tasks",
+    keywords: ["task", "todo", "checklist", "- [ ]"],
+    group: "Lists",
+    icon: "CheckListIcon",
+    shortcut: undefined,
+  },
+  {
+    id: "quote",
+    title: "Quote",
+    description: "Insert blockquote",
+    keywords: ["quote", "blockquote", ">"],
+    group: "Blocks",
+    icon: "QuoteDownIcon",
+    shortcut: "⌘⇧B",
+  },
+  {
+    id: "table",
+    title: "Table",
+    description: "Insert markdown table",
+    keywords: ["table", "grid", "|---|"],
+    group: "Blocks",
+    icon: "Table01Icon",
+    shortcut: undefined,
+  },
+  {
+    id: "codeblock",
+    title: "Code Block",
+    description: "Insert a code block with syntax highlighting",
+    keywords: ["code", "codeblock", "block", "```"],
+    group: "Blocks",
+    icon: "CodeSimpleIcon",
+    shortcut: undefined,
+  },
+  {
+    id: "rule",
+    title: "Horizontal Rule",
+    description: "Insert thematic break",
+    keywords: ["rule", "divider", "---"],
+    group: "Blocks",
+    icon: "HorizontalResizeIcon",
+    shortcut: undefined,
+  },
+  {
+    id: "bold",
+    title: "Bold",
+    description: "Mark selected text as bold",
+    keywords: ["bold", "strong", "**"],
+    group: "Inline",
+    icon: "TextBoldIcon",
+    shortcut: "⌘B",
+  },
+  {
+    id: "italic",
+    title: "Italic",
+    description: "Mark selected text as italic",
+    keywords: ["italic", "emphasis", "*"],
+    group: "Inline",
+    icon: "TextItalicIcon",
+    shortcut: "⌘I",
+  },
+  {
+    id: "strike",
+    title: "Strikethrough",
+    description: "Cross out selected text",
+    keywords: ["strike", "strikethrough", "~~"],
+    group: "Inline",
+    icon: "TextStrikethroughIcon",
+    shortcut: "⌘⇧S",
+  },
+  {
+    id: "inlinecode",
+    title: "Inline Code",
+    description: "Mark selected text as code",
+    keywords: ["inline", "code", "`"],
+    group: "Inline",
+    icon: "CodeSimpleIcon",
+    shortcut: "⌘E",
+  },
+  {
+    id: "link",
+    title: "Link",
+    description: "Insert markdown link",
+    keywords: ["link", "url", "[]()"],
+    group: "Inline",
+    icon: "Link01Icon",
+    shortcut: "⌘K",
+  },
+  {
+    id: "image",
+    title: "Image",
+    description: "Insert markdown image",
+    keywords: ["image", "img", "![]()"],
+    group: "Inline",
+    icon: "Image01Icon",
+    shortcut: undefined,
+  },
 ];
 
 const runCommand = ({
   editor,
   range,
-  props
+  props,
 }: {
   editor: SuggestionProps<SlashCommandWithKey>["editor"];
   range: SuggestionProps<SlashCommandWithKey>["range"];
@@ -77,10 +209,18 @@ const runCommand = ({
       editor.chain().focus().toggleCode().run();
       return;
     case "table":
-      editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+      editor
+        .chain()
+        .focus()
+        .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+        .run();
       return;
     case "image":
-      editor.chain().focus().insertContent("![alt text](https://example.com/image.png)").run();
+      editor
+        .chain()
+        .focus()
+        .insertContent("![alt text](https://example.com/image.png)")
+        .run();
       return;
     case "bold":
       editor.chain().focus().toggleBold().run();
@@ -92,7 +232,11 @@ const runCommand = ({
       editor.chain().focus().toggleStrike().run();
       return;
     case "link":
-      editor.chain().focus().insertContent("[link text](https://example.com)").run();
+      editor
+        .chain()
+        .focus()
+        .insertContent("[link text](https://example.com)")
+        .run();
       return;
     case "rule":
       editor.chain().focus().setHorizontalRule().run();
@@ -106,12 +250,17 @@ const getSuggestionItems = ({ query }: { query: string }) => {
     return COMMANDS;
   }
   return COMMANDS.filter((item) => {
-    const haystack = [item.title, item.description, ...item.keywords].join(" ").toLowerCase();
+    const haystack = [item.title, item.description, ...item.keywords]
+      .join(" ")
+      .toLowerCase();
     return haystack.includes(normalizedQuery);
   });
 };
 
-const slashSuggestion: Omit<SuggestionOptions<SlashCommandWithKey>, "editor"> = {
+const slashSuggestion: Omit<
+  SuggestionOptions<SlashCommandWithKey>,
+  "editor"
+> = {
   char: "/",
   allowSpaces: true,
   startOfLine: true,
@@ -126,9 +275,10 @@ const slashSuggestion: Omit<SuggestionOptions<SlashCommandWithKey>, "editor"> = 
         component = new ReactRenderer(SlashCommandList, {
           props: {
             items: props.items,
-            onSelect: (item: SlashCommandItem) => props.command(item as SlashCommandWithKey)
+            onSelect: (item: SlashCommandItem) =>
+              props.command(item as SlashCommandWithKey),
           },
-          editor: props.editor
+          editor: props.editor,
         });
 
         if (!props.clientRect) {
@@ -143,13 +293,14 @@ const slashSuggestion: Omit<SuggestionOptions<SlashCommandWithKey>, "editor"> = 
           interactive: true,
           trigger: "manual",
           placement: "bottom-start",
-          theme: "slash-menu"
+          theme: "slash-menu",
         });
       },
       onUpdate: (props: SuggestionProps<SlashCommandWithKey>) => {
         component?.updateProps({
           items: props.items,
-          onSelect: (item: SlashCommandItem) => props.command(item as SlashCommandWithKey)
+          onSelect: (item: SlashCommandItem) =>
+            props.command(item as SlashCommandWithKey),
         });
 
         if (!props.clientRect) {
@@ -157,7 +308,7 @@ const slashSuggestion: Omit<SuggestionOptions<SlashCommandWithKey>, "editor"> = 
         }
 
         popup?.setProps({
-          getReferenceClientRect: () => props.clientRect?.() ?? new DOMRect()
+          getReferenceClientRect: () => props.clientRect?.() ?? new DOMRect(),
         });
       },
       onKeyDown: (props: SuggestionKeyDownProps) => {
@@ -171,14 +322,14 @@ const slashSuggestion: Omit<SuggestionOptions<SlashCommandWithKey>, "editor"> = 
       onExit: () => {
         popup?.destroy();
         component?.destroy();
-      }
+      },
     };
-  }
+  },
 };
 
 export const SlashCommand = Extension.create({
   name: "slash-command",
   addProseMirrorPlugins() {
     return [Suggestion({ editor: this.editor, ...slashSuggestion })];
-  }
+  },
 });

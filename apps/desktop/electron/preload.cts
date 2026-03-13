@@ -1,4 +1,5 @@
-const { contextBridge, ipcRenderer } = require("electron") as typeof import("electron");
+const { contextBridge, ipcRenderer } =
+  require("electron") as typeof import("electron");
 
 import type {
   AppCommand,
@@ -8,7 +9,7 @@ import type {
   SearchResult,
   WorkspaceChangeEvent,
   WorkspaceSnapshot,
-  ExternalFileTarget
+  ExternalFileTarget,
 } from "../src/shared/workspace.js";
 
 async function invokeWithRetry<T>(channel: string, ...args: unknown[]) {
@@ -34,7 +35,10 @@ const api = {
     return invokeWithRetry<FileOpenResult | null>("dialog:open", kind);
   },
   openFolder(dirPath?: string) {
-    return invokeWithRetry<WorkspaceSnapshot | null>("workspace:openFolder", dirPath);
+    return invokeWithRetry<WorkspaceSnapshot | null>(
+      "workspace:openFolder",
+      dirPath,
+    );
   },
   openDefaultWorkspace() {
     return invokeWithRetry<WorkspaceSnapshot | null>("workspace:openDefault");
@@ -46,25 +50,45 @@ const api = {
     return invokeWithRetry<FileDocument>("workspace:openFile", filePath);
   },
   saveFile(filePath: string, content: string) {
-    return invokeWithRetry<FileDocument>("workspace:saveFile", filePath, content);
+    return invokeWithRetry<FileDocument>(
+      "workspace:saveFile",
+      filePath,
+      content,
+    );
   },
   createFile(parentDir: string, fileName: string) {
-    return invokeWithRetry<FileDocument>("workspace:createFile", parentDir, fileName);
+    return invokeWithRetry<FileDocument>(
+      "workspace:createFile",
+      parentDir,
+      fileName,
+    );
   },
   renameFile(oldPath: string, newName: string) {
-    return invokeWithRetry<FileDocument>("workspace:renameFile", oldPath, newName);
+    return invokeWithRetry<FileDocument>(
+      "workspace:renameFile",
+      oldPath,
+      newName,
+    );
   },
   deleteFile(targetPath: string) {
     return invokeWithRetry<string>("workspace:deleteFile", targetPath);
   },
   createFolder(parentDir: string, folderName: string) {
-    return invokeWithRetry<WorkspaceSnapshot["tree"]>("workspace:createFolder", parentDir, folderName);
+    return invokeWithRetry<WorkspaceSnapshot["tree"]>(
+      "workspace:createFolder",
+      parentDir,
+      folderName,
+    );
   },
   searchWorkspace(query: string) {
     return invokeWithRetry<SearchResult[]>("workspace:search", query);
   },
   getSidebarNode(kind: "file" | "directory", targetPath: string) {
-    return invokeWithRetry<WorkspaceSnapshot["tree"][number] | null>("sidebar:getNode", kind, targetPath);
+    return invokeWithRetry<WorkspaceSnapshot["tree"][number] | null>(
+      "sidebar:getNode",
+      kind,
+      targetPath,
+    );
   },
   getSettings() {
     return invokeWithRetry<AppSettings>("settings:get");
@@ -73,7 +97,10 @@ const api = {
     return invokeWithRetry<AppSettings>("settings:update", patch);
   },
   onWorkspaceChanged(listener: (event: WorkspaceChangeEvent) => void) {
-    const wrapped = (_event: Electron.IpcRendererEvent, payload: WorkspaceChangeEvent) => {
+    const wrapped = (
+      _event: Electron.IpcRendererEvent,
+      payload: WorkspaceChangeEvent,
+    ) => {
       listener(payload);
     };
 
@@ -84,7 +111,10 @@ const api = {
     };
   },
   onCommand(listener: (command: AppCommand) => void) {
-    const wrapped = (_event: Electron.IpcRendererEvent, command: AppCommand) => {
+    const wrapped = (
+      _event: Electron.IpcRendererEvent,
+      command: AppCommand,
+    ) => {
       listener(command);
     };
 
@@ -95,28 +125,36 @@ const api = {
     };
   },
   getPendingExternalPath() {
-    return invokeWithRetry<ExternalFileTarget | null>("app:getPendingExternalPath");
+    return invokeWithRetry<ExternalFileTarget | null>(
+      "app:getPendingExternalPath",
+    );
   },
   revealInFinder(targetPath: string) {
     return invokeWithRetry<boolean>("app:revealInFinder", targetPath);
   },
-   onExternalFile(listener: (target: ExternalFileTarget) => void) {
-     const wrapped = (_event: Electron.IpcRendererEvent, target: ExternalFileTarget) => {
-       listener(target);
-     };
+  onExternalFile(listener: (target: ExternalFileTarget) => void) {
+    const wrapped = (
+      _event: Electron.IpcRendererEvent,
+      target: ExternalFileTarget,
+    ) => {
+      listener(target);
+    };
 
-     ipcRenderer.on("app:open-external", wrapped);
+    ipcRenderer.on("app:open-external", wrapped);
 
-     return () => {
-       ipcRenderer.removeListener("app:open-external", wrapped);
-     };
-   },
-   openExternal(path: string) {
-     return invokeWithRetry<void>("app:openExternal", path);
-   },
-   saveBlob(filePath: string, base64Data: string) {
-     return invokeWithRetry<void>("blob:save", filePath, base64Data);
-   }
+    return () => {
+      ipcRenderer.removeListener("app:open-external", wrapped);
+    };
+  },
+  openExternal(path: string) {
+    return invokeWithRetry<void>("app:openExternal", path);
+  },
+  saveBlob(filePath: string, base64Data: string) {
+    return invokeWithRetry<void>("blob:save", filePath, base64Data);
+  },
+  exportMarkdownToPDF(markdown: string, filename: string) {
+    return invokeWithRetry<void>("app:exportPDF", markdown, filename);
+  },
 };
 
 contextBridge.exposeInMainWorld("typist", api);

@@ -9,9 +9,14 @@ import type {
   DirectoryNode,
   FileOpenResult,
   SearchResult,
-  WorkspaceSnapshot
+  WorkspaceSnapshot,
 } from "../src/shared/workspace.js";
-import { DEFAULT_SHORTCUTS, canonicalizeShortcut, mergeShortcutSettings, toElectronAccelerator } from "../src/shared/shortcuts.js";
+import {
+  DEFAULT_SHORTCUTS,
+  canonicalizeShortcut,
+  mergeShortcutSettings,
+  toElectronAccelerator,
+} from "../src/shared/shortcuts.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -54,27 +59,34 @@ function getDefaultSettings(): AppSettings {
     shortcuts: DEFAULT_SHORTCUTS,
     sidebar: {
       items: [],
-      expandedFolders: []
+      expandedFolders: [],
     },
-    autoOpenPDF: true
+    autoOpenPDF: true,
   };
 }
 
-function normalizeSidebarState(sidebar: Partial<AppSettings["sidebar"]> | undefined) {
+function normalizeSidebarState(
+  sidebar: Partial<AppSettings["sidebar"]> | undefined,
+) {
   const items = Array.isArray(sidebar?.items)
     ? sidebar.items.filter(
         (entry): entry is AppSettings["sidebar"]["items"][number] =>
-          (entry?.kind === "file" || entry?.kind === "directory") && typeof entry.path === "string" && entry.path.trim().length > 0
+          (entry?.kind === "file" || entry?.kind === "directory") &&
+          typeof entry.path === "string" &&
+          entry.path.trim().length > 0,
       )
     : [];
 
   const expandedFolders = Array.isArray(sidebar?.expandedFolders)
-    ? sidebar.expandedFolders.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0)
+    ? sidebar.expandedFolders.filter(
+        (entry): entry is string =>
+          typeof entry === "string" && entry.trim().length > 0,
+      )
     : [];
 
   return {
     items,
-    expandedFolders: Array.from(new Set(expandedFolders))
+    expandedFolders: Array.from(new Set(expandedFolders)),
   };
 }
 
@@ -82,7 +94,9 @@ function isThemeMode(value: unknown): value is AppSettings["themeMode"] {
   return value === "light" || value === "dark" || value === "system";
 }
 
-function normalizeShortcutSettings(shortcuts: AppSettings["shortcuts"] | undefined) {
+function normalizeShortcutSettings(
+  shortcuts: AppSettings["shortcuts"] | undefined,
+) {
   return mergeShortcutSettings(shortcuts).map(({ id, keys }) => ({ id, keys }));
 }
 
@@ -98,7 +112,9 @@ function validateShortcutSettings(shortcuts: AppSettings["shortcuts"]) {
 
     const duplicate = seen.get(key);
     if (duplicate && duplicate !== shortcut.id) {
-      throw new Error(`Duplicate shortcut assigned to ${duplicate} and ${shortcut.id}.`);
+      throw new Error(
+        `Duplicate shortcut assigned to ${duplicate} and ${shortcut.id}.`,
+      );
     }
 
     seen.set(key, shortcut.id);
@@ -121,37 +137,61 @@ function buildApplicationMenu(shortcuts: AppSettings["shortcuts"]) {
         {
           label: "New Note",
           accelerator: getAccelerator("new-note"),
-          click: () => mainWindow?.webContents.send("app:command", "new-file" satisfies AppCommand)
+          click: () =>
+            mainWindow?.webContents.send(
+              "app:command",
+              "new-file" satisfies AppCommand,
+            ),
         },
         {
           label: "Open File",
           accelerator: getAccelerator("open-file"),
-          click: () => mainWindow?.webContents.send("app:command", "open-file" satisfies AppCommand)
+          click: () =>
+            mainWindow?.webContents.send(
+              "app:command",
+              "open-file" satisfies AppCommand,
+            ),
         },
         {
           label: "Open Folder",
           accelerator: getAccelerator("open-folder"),
-          click: () => mainWindow?.webContents.send("app:command", "open-folder" satisfies AppCommand)
+          click: () =>
+            mainWindow?.webContents.send(
+              "app:command",
+              "open-folder" satisfies AppCommand,
+            ),
         },
         { type: "separator" },
         {
           label: "Save",
           accelerator: getAccelerator("save"),
-          click: () => mainWindow?.webContents.send("app:command", "save" satisfies AppCommand)
+          click: () =>
+            mainWindow?.webContents.send(
+              "app:command",
+              "save" satisfies AppCommand,
+            ),
         },
         { type: "separator" },
         {
           label: "Toggle Sidebar",
           accelerator: getAccelerator("toggle-sidebar"),
-          click: () => mainWindow?.webContents.send("app:command", "toggle-sidebar" satisfies AppCommand)
+          click: () =>
+            mainWindow?.webContents.send(
+              "app:command",
+              "toggle-sidebar" satisfies AppCommand,
+            ),
         },
         { type: "separator" },
         {
           label: "Command Palette",
           accelerator: getAccelerator("command-palette"),
-          click: () => mainWindow?.webContents.send("app:command", "quick-open" satisfies AppCommand)
-        }
-      ]
+          click: () =>
+            mainWindow?.webContents.send(
+              "app:command",
+              "quick-open" satisfies AppCommand,
+            ),
+        },
+      ],
     },
     {
       label: "Edit",
@@ -162,13 +202,13 @@ function buildApplicationMenu(shortcuts: AppSettings["shortcuts"]) {
         { role: "cut" },
         { role: "copy" },
         { role: "paste" },
-        { role: "selectAll" }
-      ]
+        { role: "selectAll" },
+      ],
     },
     {
       label: "View",
-      submenu: [{ role: "reload" }, { role: "toggleDevTools" }]
-    }
+      submenu: [{ role: "reload" }, { role: "toggleDevTools" }],
+    },
   ]);
 }
 
@@ -176,7 +216,9 @@ function refreshApplicationMenu(shortcuts: AppSettings["shortcuts"]) {
   Menu.setApplicationMenu(buildApplicationMenu(shortcuts));
 }
 
-async function sanitizeSettingsWithFileValidation(input: unknown): Promise<AppSettings> {
+async function sanitizeSettingsWithFileValidation(
+  input: unknown,
+): Promise<AppSettings> {
   const defaults = getDefaultSettings();
 
   if (!input || typeof input !== "object") {
@@ -184,7 +226,7 @@ async function sanitizeSettingsWithFileValidation(input: unknown): Promise<AppSe
   }
 
   const candidate = input as Partial<AppSettings>;
-  
+
   let validRecentFiles: string[] = [];
   if (Array.isArray(candidate.recentFiles)) {
     for (const filePath of candidate.recentFiles) {
@@ -205,7 +247,10 @@ async function sanitizeSettingsWithFileValidation(input: unknown): Promise<AppSe
   for (const item of validSidebar.items) {
     try {
       const stats = await fs.stat(item.path);
-      if ((item.kind === "file" && stats.isFile()) || (item.kind === "directory" && stats.isDirectory())) {
+      if (
+        (item.kind === "file" && stats.isFile()) ||
+        (item.kind === "directory" && stats.isDirectory())
+      ) {
         validSidebarItems.push(item);
       }
     } catch {
@@ -225,23 +270,38 @@ async function sanitizeSettingsWithFileValidation(input: unknown): Promise<AppSe
     }
   }
 
-   return {
-     defaultWorkspacePath:
-       typeof candidate.defaultWorkspacePath === "string" && candidate.defaultWorkspacePath.trim().length > 0
-         ? candidate.defaultWorkspacePath
-         : defaults.defaultWorkspacePath,
-     themeId: typeof candidate.themeId === "string" && candidate.themeId.trim().length > 0 ? candidate.themeId : defaults.themeId,
-     themeMode: isThemeMode(candidate.themeMode) ? candidate.themeMode : defaults.themeMode,
-     recentFiles: validRecentFiles,
-     shortcuts: Array.isArray(candidate.shortcuts)
-       ? normalizeShortcutSettings(candidate.shortcuts.filter((s): s is { id: string; keys: string } => typeof s?.id === "string" && typeof s?.keys === "string"))
-       : defaults.shortcuts,
-     sidebar: {
-       items: validSidebarItems,
-       expandedFolders: Array.from(new Set(validExpandedFolders))
-     },
-     autoOpenPDF: typeof candidate.autoOpenPDF === "boolean" ? candidate.autoOpenPDF : defaults.autoOpenPDF
-   };
+  return {
+    defaultWorkspacePath:
+      typeof candidate.defaultWorkspacePath === "string" &&
+      candidate.defaultWorkspacePath.trim().length > 0
+        ? candidate.defaultWorkspacePath
+        : defaults.defaultWorkspacePath,
+    themeId:
+      typeof candidate.themeId === "string" &&
+      candidate.themeId.trim().length > 0
+        ? candidate.themeId
+        : defaults.themeId,
+    themeMode: isThemeMode(candidate.themeMode)
+      ? candidate.themeMode
+      : defaults.themeMode,
+    recentFiles: validRecentFiles,
+    shortcuts: Array.isArray(candidate.shortcuts)
+      ? normalizeShortcutSettings(
+          candidate.shortcuts.filter(
+            (s): s is { id: string; keys: string } =>
+              typeof s?.id === "string" && typeof s?.keys === "string",
+          ),
+        )
+      : defaults.shortcuts,
+    sidebar: {
+      items: validSidebarItems,
+      expandedFolders: Array.from(new Set(validExpandedFolders)),
+    },
+    autoOpenPDF:
+      typeof candidate.autoOpenPDF === "boolean"
+        ? candidate.autoOpenPDF
+        : defaults.autoOpenPDF,
+  };
 }
 
 function sanitizeSettingsPatch(patch: unknown): Partial<AppSettings> {
@@ -253,7 +313,10 @@ function sanitizeSettingsPatch(patch: unknown): Partial<AppSettings> {
   const nextPatch: Partial<AppSettings> = {};
 
   if ("defaultWorkspacePath" in candidate) {
-    if (typeof candidate.defaultWorkspacePath !== "string" || candidate.defaultWorkspacePath.trim().length === 0) {
+    if (
+      typeof candidate.defaultWorkspacePath !== "string" ||
+      candidate.defaultWorkspacePath.trim().length === 0
+    ) {
       throw new Error("defaultWorkspacePath must be a non-empty string.");
     }
 
@@ -261,7 +324,10 @@ function sanitizeSettingsPatch(patch: unknown): Partial<AppSettings> {
   }
 
   if ("themeId" in candidate) {
-    if (typeof candidate.themeId !== "string" || candidate.themeId.trim().length === 0) {
+    if (
+      typeof candidate.themeId !== "string" ||
+      candidate.themeId.trim().length === 0
+    ) {
       throw new Error("themeId must be a non-empty string.");
     }
 
@@ -277,7 +343,10 @@ function sanitizeSettingsPatch(patch: unknown): Partial<AppSettings> {
   }
 
   if ("recentFiles" in candidate) {
-    if (!Array.isArray(candidate.recentFiles) || candidate.recentFiles.some((entry) => typeof entry !== "string")) {
+    if (
+      !Array.isArray(candidate.recentFiles) ||
+      candidate.recentFiles.some((entry) => typeof entry !== "string")
+    ) {
       throw new Error("recentFiles must be an array of strings.");
     }
 
@@ -285,23 +354,44 @@ function sanitizeSettingsPatch(patch: unknown): Partial<AppSettings> {
   }
 
   if ("shortcuts" in candidate) {
-    if (!Array.isArray(candidate.shortcuts) || candidate.shortcuts.some((s) => typeof s?.id !== "string" || typeof s?.keys !== "string")) {
-      throw new Error("shortcuts must be an array of { id: string, keys: string }.");
+    if (
+      !Array.isArray(candidate.shortcuts) ||
+      candidate.shortcuts.some(
+        (s) => typeof s?.id !== "string" || typeof s?.keys !== "string",
+      )
+    ) {
+      throw new Error(
+        "shortcuts must be an array of { id: string, keys: string }.",
+      );
     }
 
     nextPatch.shortcuts = validateShortcutSettings(candidate.shortcuts);
   }
 
   if ("sidebar" in candidate) {
-    if (!candidate.sidebar || typeof candidate.sidebar !== "object" || Array.isArray(candidate.sidebar)) {
+    if (
+      !candidate.sidebar ||
+      typeof candidate.sidebar !== "object" ||
+      Array.isArray(candidate.sidebar)
+    ) {
       throw new Error("sidebar must be an object.");
     }
 
-    nextPatch.sidebar = normalizeSidebarState(candidate.sidebar as Partial<AppSettings["sidebar"]>);
+    nextPatch.sidebar = normalizeSidebarState(
+      candidate.sidebar as Partial<AppSettings["sidebar"]>,
+    );
   }
 
   const invalidKeys = Object.keys(candidate).filter(
-    (key) => !["defaultWorkspacePath", "themeId", "themeMode", "recentFiles", "shortcuts", "sidebar"].includes(key)
+    (key) =>
+      ![
+        "defaultWorkspacePath",
+        "themeId",
+        "themeMode",
+        "recentFiles",
+        "shortcuts",
+        "sidebar",
+      ].includes(key),
   );
 
   if (invalidKeys.length > 0) {
@@ -324,16 +414,22 @@ async function loadSettings(): Promise<AppSettings> {
 
 async function saveSettings(nextSettings: AppSettings) {
   await fs.mkdir(path.dirname(getSettingsPath()), { recursive: true });
-  await fs.writeFile(getSettingsPath(), JSON.stringify(nextSettings, null, 2), "utf8");
+  await fs.writeFile(
+    getSettingsPath(),
+    JSON.stringify(nextSettings, null, 2),
+    "utf8",
+  );
   return nextSettings;
 }
 
 async function updateSettings(patch: Partial<AppSettings>) {
-  settingsUpdatePromise = (settingsUpdatePromise ?? Promise.resolve(getDefaultSettings())).then(async () => {
+  settingsUpdatePromise = (
+    settingsUpdatePromise ?? Promise.resolve(getDefaultSettings())
+  ).then(async () => {
     const current = await loadSettings();
     return saveSettings({
       ...current,
-      ...patch
+      ...patch,
     });
   });
 
@@ -342,10 +438,13 @@ async function updateSettings(patch: Partial<AppSettings>) {
 
 async function recordRecentFile(filePath: string) {
   const settings = await loadSettings();
-  const recentFiles = [filePath, ...settings.recentFiles.filter((entry) => entry !== filePath)].slice(0, 8);
+  const recentFiles = [
+    filePath,
+    ...settings.recentFiles.filter((entry) => entry !== filePath),
+  ].slice(0, 8);
   await saveSettings({
     ...settings,
-    recentFiles
+    recentFiles,
   });
 }
 
@@ -358,7 +457,10 @@ async function readMarkdownFile(filePath: string, recordRecent = false) {
     // Check if file exists first
     await fs.access(filePath);
   } catch (err) {
-    const code = typeof err === "object" && err && "code" in err ? String((err as { code?: unknown }).code) : "";
+    const code =
+      typeof err === "object" && err && "code" in err
+        ? String((err as { code?: unknown }).code)
+        : "";
     if (code === "ENOENT") {
       throw new Error(`File not found: ${filePath}`);
     }
@@ -374,11 +476,14 @@ async function readMarkdownFile(filePath: string, recordRecent = false) {
   return {
     path: filePath,
     name: path.basename(filePath),
-    content
+    content,
   };
 }
 
-async function getSidebarNode(kind: "file" | "directory", targetPath: string): Promise<DirectoryNode | null> {
+async function getSidebarNode(
+  kind: "file" | "directory",
+  targetPath: string,
+): Promise<DirectoryNode | null> {
   try {
     const stats = await fs.stat(targetPath);
 
@@ -390,7 +495,7 @@ async function getSidebarNode(kind: "file" | "directory", targetPath: string): P
       return {
         type: "file",
         name: path.basename(targetPath),
-        path: targetPath
+        path: targetPath,
       };
     }
 
@@ -402,7 +507,7 @@ async function getSidebarNode(kind: "file" | "directory", targetPath: string): P
       type: "directory",
       name: path.basename(targetPath),
       path: targetPath,
-      children: await buildDirectoryTree(targetPath)
+      children: await buildDirectoryTree(targetPath),
     };
   } catch {
     return null;
@@ -433,20 +538,20 @@ async function buildDirectoryTree(dirPath: string): Promise<DirectoryNode[]> {
               type: "directory" as const,
               name: entry.name,
               path: entryPath,
-              children: await buildDirectoryTree(entryPath)
+              children: await buildDirectoryTree(entryPath),
             };
           }
 
           return {
             type: "file" as const,
             name: entry.name,
-            path: entryPath
+            path: entryPath,
           };
         } catch (err) {
           // Skip files/directories that can't be accessed
           return null;
         }
-      })
+      }),
   );
 
   // Filter out null values (inaccessible entries)
@@ -475,7 +580,9 @@ async function openWorkspace(dirPath: string): Promise<WorkspaceSnapshot> {
   const tree = await buildDirectoryTree(dirPath);
   searchableFilesCache = await collectMarkdownFiles(tree);
   const activeFilePath = searchableFilesCache[0] ?? null;
-  const activeFile = activeFilePath ? await readMarkdownFile(activeFilePath, true) : null;
+  const activeFile = activeFilePath
+    ? await readMarkdownFile(activeFilePath, true)
+    : null;
 
   if (activeWatcher) {
     await activeWatcher.close();
@@ -485,8 +592,8 @@ async function openWorkspace(dirPath: string): Promise<WorkspaceSnapshot> {
     ignoreInitial: true,
     awaitWriteFinish: {
       stabilityThreshold: 150,
-      pollInterval: 50
-    }
+      pollInterval: 50,
+    },
   });
 
   activeWatcher.on("all", async (_eventName, changedPath) => {
@@ -499,14 +606,14 @@ async function openWorkspace(dirPath: string): Promise<WorkspaceSnapshot> {
     mainWindow.webContents.send("workspace:changed", {
       rootPath: dirPath,
       tree: nextTree,
-      changedPath
+      changedPath,
     });
   });
 
   return {
     rootPath: dirPath,
     tree,
-    activeFile
+    activeFile,
   };
 }
 
@@ -535,7 +642,7 @@ async function searchWorkspace(query: string): Promise<SearchResult[]> {
         path: filePath,
         name: path.basename(filePath),
         line: index + 1,
-        snippet: lineContent.trim().slice(0, 180)
+        snippet: lineContent.trim().slice(0, 180),
       });
 
       if (results.length >= 50) {
@@ -547,7 +654,9 @@ async function searchWorkspace(query: string): Promise<SearchResult[]> {
   return results;
 }
 
-async function showOpenDialog(kind: "file" | "directory"): Promise<FileOpenResult | null> {
+async function showOpenDialog(
+  kind: "file" | "directory",
+): Promise<FileOpenResult | null> {
   const properties: Array<"openFile" | "openDirectory" | "createDirectory"> =
     kind === "file" ? ["openFile"] : ["openDirectory", "createDirectory"];
 
@@ -556,7 +665,7 @@ async function showOpenDialog(kind: "file" | "directory"): Promise<FileOpenResul
     filters:
       kind === "file"
         ? [{ name: "Markdown", extensions: ["md", "markdown"] }]
-        : undefined
+        : undefined,
   });
 
   if (result.canceled || result.filePaths.length === 0) {
@@ -565,7 +674,7 @@ async function showOpenDialog(kind: "file" | "directory"): Promise<FileOpenResul
 
   return {
     kind,
-    path: result.filePaths[0]
+    path: result.filePaths[0],
   };
 }
 
@@ -601,13 +710,20 @@ async function createWindow() {
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
-      sandbox: true
-    }
+      sandbox: true,
+    },
   });
 
-  mainWindow.webContents.on("did-fail-load", (_event, code, description, validatedUrl) => {
-    console.error("Renderer load failed:", { code, description, validatedUrl });
-  });
+  mainWindow.webContents.on(
+    "did-fail-load",
+    (_event, code, description, validatedUrl) => {
+      console.error("Renderer load failed:", {
+        code,
+        description,
+        validatedUrl,
+      });
+    },
+  );
 
   mainWindow.webContents.on("preload-error", (_event, preloadPath, error) => {
     console.error("Preload failed:", preloadPath, error);
@@ -619,8 +735,8 @@ async function createWindow() {
     console.error("Renderer bootstrap failed:", error);
     await mainWindow.loadURL(
       `data:text/html,${encodeURIComponent(
-        "<!doctype html><meta charset='utf-8'><style>body{font-family:system-ui;padding:24px;line-height:1.5}</style><h1>Typist could not start the renderer.</h1><p>Check the dev server logs and restart <code>pnpm dev:desktop</code>.</p>"
-      )}`
+        "<!doctype html><meta charset='utf-8'><style>body{font-family:system-ui;padding:24px;line-height:1.5}</style><h1>Typist could not start the renderer.</h1><p>Check the dev server logs and restart <code>pnpm dev:desktop</code>.</p>",
+      )}`,
     );
   }
 
@@ -628,7 +744,9 @@ async function createWindow() {
   refreshApplicationMenu(settings.shortcuts);
 }
 
-ipcMain.handle("dialog:open", async (_event, kind: "file" | "directory") => showOpenDialog(kind));
+ipcMain.handle("dialog:open", async (_event, kind: "file" | "directory") =>
+  showOpenDialog(kind),
+);
 
 ipcMain.handle("workspace:openFolder", async (_event, dirPath?: string) => {
   let resolvedPath = dirPath;
@@ -670,31 +788,45 @@ function assertWithinWorkspace(targetPath: string) {
   }
 }
 
-ipcMain.handle("workspace:openFile", async (_event, filePath: string) => readMarkdownFile(filePath, true));
+ipcMain.handle("workspace:openFile", async (_event, filePath: string) =>
+  readMarkdownFile(filePath, true),
+);
 
-ipcMain.handle("workspace:saveFile", async (_event, filePath: string, content: string) => {
-  await fs.writeFile(filePath, content, "utf8");
-  return readMarkdownFile(filePath, false);
-});
+ipcMain.handle(
+  "workspace:saveFile",
+  async (_event, filePath: string, content: string) => {
+    await fs.writeFile(filePath, content, "utf8");
+    return readMarkdownFile(filePath, false);
+  },
+);
 
-ipcMain.handle("workspace:createFile", async (_event, parentDir: string, fileName: string) => {
-  assertWithinWorkspace(parentDir);
-  assertBasename(fileName);
-  const normalizedFileName = fileName.endsWith(".md") ? fileName : `${fileName}.md`;
-  const targetPath = path.join(parentDir, normalizedFileName);
-  await fs.writeFile(targetPath, "", { flag: "wx" });
-  return readMarkdownFile(targetPath, true);
-});
+ipcMain.handle(
+  "workspace:createFile",
+  async (_event, parentDir: string, fileName: string) => {
+    assertWithinWorkspace(parentDir);
+    assertBasename(fileName);
+    const normalizedFileName = fileName.endsWith(".md")
+      ? fileName
+      : `${fileName}.md`;
+    const targetPath = path.join(parentDir, normalizedFileName);
+    await fs.writeFile(targetPath, "", { flag: "wx" });
+    return readMarkdownFile(targetPath, true);
+  },
+);
 
-ipcMain.handle("workspace:renameFile", async (_event, oldPath: string, newName: string) => {
-  assertWithinWorkspace(oldPath);
-  assertBasename(newName);
-  const hasMarkdownExt = newName.endsWith(".md") || newName.endsWith(".markdown");
-  const normalizedFileName = hasMarkdownExt ? newName : `${newName}.md`;
-  const newPath = path.join(path.dirname(oldPath), normalizedFileName);
-  await fs.rename(oldPath, newPath);
-  return readMarkdownFile(newPath, true);
-});
+ipcMain.handle(
+  "workspace:renameFile",
+  async (_event, oldPath: string, newName: string) => {
+    assertWithinWorkspace(oldPath);
+    assertBasename(newName);
+    const hasMarkdownExt =
+      newName.endsWith(".md") || newName.endsWith(".markdown");
+    const normalizedFileName = hasMarkdownExt ? newName : `${newName}.md`;
+    const newPath = path.join(path.dirname(oldPath), normalizedFileName);
+    await fs.rename(oldPath, newPath);
+    return readMarkdownFile(newPath, true);
+  },
+);
 
 ipcMain.handle("workspace:deleteFile", async (_event, targetPath: string) => {
   assertWithinWorkspace(targetPath);
@@ -702,21 +834,30 @@ ipcMain.handle("workspace:deleteFile", async (_event, targetPath: string) => {
   return targetPath;
 });
 
-ipcMain.handle("workspace:createFolder", async (_event, parentDir: string, folderName: string) => {
-  assertWithinWorkspace(parentDir);
-  assertBasename(folderName);
-  await fs.mkdir(path.join(parentDir, folderName), { recursive: false });
+ipcMain.handle(
+  "workspace:createFolder",
+  async (_event, parentDir: string, folderName: string) => {
+    assertWithinWorkspace(parentDir);
+    assertBasename(folderName);
+    await fs.mkdir(path.join(parentDir, folderName), { recursive: false });
 
-  if (!activeWorkspaceRoot) {
-    return [];
-  }
+    if (!activeWorkspaceRoot) {
+      return [];
+    }
 
-  return buildDirectoryTree(activeWorkspaceRoot);
-});
+    return buildDirectoryTree(activeWorkspaceRoot);
+  },
+);
 
-ipcMain.handle("workspace:search", async (_event, query: string) => searchWorkspace(query));
+ipcMain.handle("workspace:search", async (_event, query: string) =>
+  searchWorkspace(query),
+);
 
-ipcMain.handle("sidebar:getNode", async (_event, kind: "file" | "directory", targetPath: string) => getSidebarNode(kind, targetPath));
+ipcMain.handle(
+  "sidebar:getNode",
+  async (_event, kind: "file" | "directory", targetPath: string) =>
+    getSidebarNode(kind, targetPath),
+);
 
 ipcMain.handle("workspace:openDocument", async () => {
   const selection = await showOpenDialog("file");
@@ -745,6 +886,77 @@ ipcMain.handle("app:openExternal", async (_event, path: string) => {
   shell.openPath(path);
 });
 
+ipcMain.handle(
+  "app:exportPDF",
+  async (_event, markdown: string, filename: string) => {
+    try {
+      const PDFDocument = (await import("pdfkit")).default;
+      const { marked } = await import("marked");
+      const fs2 = await import("fs");
+
+      // Convert markdown to plain text (strip markdown formatting)
+      const tokens = marked.lexer(markdown);
+      let plainText = "";
+
+      for (const token of tokens) {
+        if (token.type === "heading") {
+          plainText += "\n" + (token as any).text + "\n";
+        } else if (token.type === "paragraph") {
+          plainText += (token as any).text + "\n";
+        } else if (token.type === "list") {
+          const items = (token as any).items as Array<{ text: string }>;
+          items.forEach((item) => {
+            plainText += "• " + item.text + "\n";
+          });
+        } else if (token.type === "code") {
+          plainText += "\n" + (token as any).text + "\n\n";
+        } else if (token.type === "blockquote") {
+          plainText += "> " + (token as any).text + "\n";
+        }
+      }
+
+      const savePath = path.join(app.getPath("downloads"), filename);
+      const doc = new PDFDocument();
+      const writeStream = fs2.createWriteStream(savePath);
+
+      doc.pipe(writeStream);
+
+      // Add title from filename
+      doc
+        .fontSize(24)
+        .font("Helvetica-Bold")
+        .text(filename.replace(/\.pdf$/i, ""), { align: "left" })
+        .moveDown();
+
+      // Add content
+      doc.fontSize(11).font("Helvetica").text(plainText, {
+        align: "left",
+        width: 500,
+      });
+
+      doc.end();
+
+      // Wait for the file to be written
+      await new Promise<void>((resolve, reject) => {
+        writeStream.on("finish", () => resolve());
+        writeStream.on("error", reject);
+        doc.on("error", reject);
+      });
+
+      // Open the PDF if autoOpenPDF setting is enabled
+      const settings = await loadSettings();
+      if (settings.autoOpenPDF) {
+        shell.openPath(savePath);
+      }
+
+      return savePath;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      throw new Error(`Failed to export PDF: ${message}`);
+    }
+  },
+);
+
 async function getExternalPathTarget(targetPath: string) {
   try {
     const stat = await fs.stat(targetPath);
@@ -763,7 +975,7 @@ ipcMain.handle("app:getPendingExternalPath", async () => {
 
 app.on("open-file", async (event, filePath) => {
   event.preventDefault();
-  
+
   if (mainWindow) {
     if (mainWindow.isMinimized()) mainWindow.restore();
     mainWindow.focus();
@@ -776,19 +988,25 @@ app.on("open-file", async (event, filePath) => {
   }
 });
 
-app.whenReady().then(async () => {
-  if (process.platform !== "darwin") {
-    const args = process.argv.slice(1);
-    const target = args.find((arg) => arg !== "." && !arg.startsWith("-") && !arg.includes("node_modules"));
-    if (target) {
-      pendingExternalPath = path.resolve(target);
+app
+  .whenReady()
+  .then(async () => {
+    if (process.platform !== "darwin") {
+      const args = process.argv.slice(1);
+      const target = args.find(
+        (arg) =>
+          arg !== "." && !arg.startsWith("-") && !arg.includes("node_modules"),
+      );
+      if (target) {
+        pendingExternalPath = path.resolve(target);
+      }
     }
-  }
 
-  await createWindow();
-}).catch((error) => {
-  console.error("Failed to create initial window:", error);
-});
+    await createWindow();
+  })
+  .catch((error) => {
+    console.error("Failed to create initial window:", error);
+  });
 
 app.on("window-all-closed", async () => {
   if (activeWatcher) {
