@@ -3,6 +3,7 @@ import type { DragEvent, MouseEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 import { ChevronRightIcon, FileIcon, FolderIcon, MoreVerticalIcon, PencilIcon, TrashIcon } from "./icons";
 import type { DragPosition, SidebarTreeNodeMenuCoords, SidebarTreeNodeProps } from "../types/sidebar";
@@ -187,21 +188,25 @@ export const SidebarTreeNode = ({
             {node.name}
           </Button>
         )}
-        {!isRenaming ? (
-          <div className="relative flex-shrink-0 ml-1">
-            <Button
-              ref={menuButtonRef}
-              variant="ghost"
-              size="icon-xs"
-              className="text-muted-foreground hover:text-foreground hover:bg-muted rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto"
-              onClick={handleMenuToggle}
-              title="Options"
-              type="button"
-            >
-              <MoreVerticalIcon size={14} />
-            </Button>
-          </div>
-        ) : null}
+         {!isRenaming ? (
+            <div className="relative flex-shrink-0 ml-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    ref={menuButtonRef}
+                    variant="ghost"
+                    size="icon-xs"
+                    className="text-muted-foreground hover:text-foreground hover:bg-muted rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto"
+                    onClick={handleMenuToggle}
+                    type="button"
+                  >
+                    <MoreVerticalIcon size={14} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">Options</TooltipContent>
+              </Tooltip>
+            </div>
+          ) : null}
       </div>
       {showMenu && menuCoords ? (
         <>

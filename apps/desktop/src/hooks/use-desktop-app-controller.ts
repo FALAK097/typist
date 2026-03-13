@@ -570,19 +570,38 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
         return;
       }
 
+      // These shortcuts fire globally — even when the editor (contenteditable) is focused.
+      const globalShortcutIds = new Set(["toggle-sidebar", "command-palette", "settings", "navigate-back", "navigate-forward"]);
+      const globalShortcut = shortcuts.find((entry) => globalShortcutIds.has(entry.id) && matchShortcut(event, entry.keys));
+      if (globalShortcut) {
+        event.preventDefault();
+        switch (globalShortcut.id) {
+          case "toggle-sidebar":
+            setIsSidebarCollapsed((prev) => !prev);
+            break;
+          case "command-palette":
+            setIsPaletteOpen((value) => !value);
+            break;
+          case "settings":
+            setIsSettingsOpen((value) => !value);
+            break;
+          case "navigate-back":
+            void navigateBack();
+            break;
+          case "navigate-forward":
+            void navigateForward();
+            break;
+        }
+        return;
+      }
+
       if (!isEditableInput) {
-        const shortcut = shortcuts.find((entry) => matchShortcut(event, entry.keys));
+        const shortcut = shortcuts.find((entry) => !globalShortcutIds.has(entry.id) && matchShortcut(event, entry.keys));
 
         if (shortcut) {
           event.preventDefault();
 
           switch (shortcut.id) {
-            case "command-palette":
-              setIsPaletteOpen((value) => !value);
-              break;
-            case "settings":
-              setIsSettingsOpen((value) => !value);
-              break;
             case "new-note":
               void createNote();
               break;
@@ -618,17 +637,8 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
             case "previous-note":
               void moveNote(-1);
               break;
-            case "toggle-sidebar":
-              setIsSidebarCollapsed((prev) => !prev);
-              break;
             case "next-note":
               void moveNote(1);
-              break;
-            case "navigate-back":
-              void navigateBack();
-              break;
-            case "navigate-forward":
-              void navigateForward();
               break;
           }
           return;

@@ -13,8 +13,9 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import { Markdown } from "tiptap-markdown";
 
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
-import { createSlashCommand } from "./slash-command";
+import { SlashCommand } from "./slash-command";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -53,19 +54,11 @@ export const MarkdownEditor = ({
   onNavigateForward,
   canGoBack,
   canGoForward,
-  autoOpenPDFSetting,
-  editorShortcuts
+  autoOpenPDFSetting
 }: MarkdownEditorProps) => {
   const lastSyncedMarkdown = useRef(content);
   const toastTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
 
-  // Mutable ref so the slash command extension always reads the latest shortcuts
-  // without needing to recreate the TipTap editor instance.
-  const shortcutsRef = useRef(editorShortcuts);
-  shortcutsRef.current = editorShortcuts;
-
-  // Stable extension instance — created once, reads from shortcutsRef on each invocation.
-  const slashCommandExtension = useRef(createSlashCommand(shortcutsRef)).current;
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -94,7 +87,7 @@ export const MarkdownEditor = ({
       TableRow,
       TableHeader,
       TableCell,
-      slashCommandExtension,
+      SlashCommand,
       Placeholder.configure({
         placeholder: "Start with a title, then let markdown shortcuts shape the page."
       }),
@@ -289,62 +282,88 @@ export const MarkdownEditor = ({
     <section className="relative h-full min-h-0 flex flex-col bg-background">
       <div className="flex items-center px-4 py-2 border-b border-border/40 gap-2">
         {/* Left: toolbar + title */}
-        <div className="flex items-center gap-1 flex-shrink-0 min-w-0">
-          {onToggleSidebar && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="text-muted-foreground hover:text-foreground hover:bg-muted flex-shrink-0"
-              onClick={onToggleSidebar}
-              title={isSidebarCollapsed ? `Show Sidebar (${toggleSidebarShortcut ?? "⌘B"})` : `Hide Sidebar (${toggleSidebarShortcut ?? "⌘B"})`}
-              type="button"
-            >
-              {isSidebarCollapsed ? <PanelRightIcon size={16} /> : <PanelLeftIcon size={16} />}
-            </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            disabled={!canGoBack}
-            onClick={onNavigateBack}
-            className="flex-shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted disabled:text-muted-foreground/40 disabled:opacity-40"
-            title="Back"
-            type="button"
-          >
-            <ArrowLeftIcon size={14} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            disabled={!canGoForward}
-            onClick={onNavigateForward}
-            className="flex-shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted disabled:text-muted-foreground/40 disabled:opacity-40"
-            title="Forward"
-            type="button"
-          >
-            <ArrowRightIcon size={14} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="text-muted-foreground hover:text-foreground hover:bg-muted flex-shrink-0"
-            onClick={onCreateNote}
-            title={`New Note (${newNoteShortcut ?? "⌘N"})`}
-            type="button"
-          >
-            <PlusIcon size={16} />
-          </Button>
-          {fileName && (
-            <>
-              <span className="text-border/60 text-xs flex-shrink-0 mx-0.5">·</span>
-              <span
-                className="text-sm font-medium text-foreground truncate max-w-[180px]"
-                title={fileName.replace(/\.(md|markdown)$/i, "")}
-              >
-                {fileName.replace(/\.(md|markdown)$/i, "")}
-              </span>
-            </>
-          )}
+         <div className="flex items-center gap-1 flex-shrink-0 min-w-0">
+           {onToggleSidebar && (
+             <Tooltip>
+               <TooltipTrigger asChild>
+                 <Button
+                   variant="ghost"
+                   size="icon-sm"
+                   className="text-muted-foreground hover:text-foreground hover:bg-muted flex-shrink-0"
+                   onClick={onToggleSidebar}
+                   type="button"
+                 >
+                   {isSidebarCollapsed ? <PanelRightIcon size={16} /> : <PanelLeftIcon size={16} />}
+                 </Button>
+               </TooltipTrigger>
+               <TooltipContent side="bottom">
+                 {isSidebarCollapsed ? `Show Sidebar (${toggleSidebarShortcut ?? "⌘B"})` : `Hide Sidebar (${toggleSidebarShortcut ?? "⌘B"})`}
+               </TooltipContent>
+             </Tooltip>
+           )}
+           <Tooltip>
+             <TooltipTrigger asChild>
+               <Button
+                 variant="ghost"
+                 size="icon-sm"
+                 disabled={!canGoBack}
+                 onClick={onNavigateBack}
+                 className="flex-shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted disabled:text-muted-foreground/40 disabled:opacity-40"
+                 type="button"
+               >
+                 <ArrowLeftIcon size={14} />
+               </Button>
+             </TooltipTrigger>
+             <TooltipContent side="bottom">Back</TooltipContent>
+           </Tooltip>
+           <Tooltip>
+             <TooltipTrigger asChild>
+               <Button
+                 variant="ghost"
+                 size="icon-sm"
+                 disabled={!canGoForward}
+                 onClick={onNavigateForward}
+                 className="flex-shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted disabled:text-muted-foreground/40 disabled:opacity-40"
+                 type="button"
+               >
+                 <ArrowRightIcon size={14} />
+               </Button>
+             </TooltipTrigger>
+             <TooltipContent side="bottom">Forward</TooltipContent>
+           </Tooltip>
+           <Tooltip>
+             <TooltipTrigger asChild>
+               <Button
+                 variant="ghost"
+                 size="icon-sm"
+                 className="text-muted-foreground hover:text-foreground hover:bg-muted flex-shrink-0"
+                 onClick={onCreateNote}
+                 type="button"
+               >
+                 <PlusIcon size={16} />
+               </Button>
+             </TooltipTrigger>
+             <TooltipContent side="bottom">
+               {`New Note (${newNoteShortcut ?? "⌘N"})`}
+             </TooltipContent>
+           </Tooltip>
+           {fileName && (
+             <>
+               <span className="text-border/60 text-xs flex-shrink-0 mx-0.5">·</span>
+               <Tooltip>
+                 <TooltipTrigger asChild>
+                   <span
+                     className="text-sm font-medium text-foreground truncate max-w-[180px]"
+                   >
+                     {fileName.replace(/\.(md|markdown)$/i, "")}
+                   </span>
+                 </TooltipTrigger>
+                 <TooltipContent side="bottom">
+                   {fileName.replace(/\.(md|markdown)$/i, "")}
+                 </TooltipContent>
+               </Tooltip>
+             </>
+           )}
         </div>
 
         {/* Center: search bar */}
@@ -366,30 +385,38 @@ export const MarkdownEditor = ({
           </div>
         )}
 
-        {/* Right: actions */}
-        <div className="flex items-center gap-1 relative flex-shrink-0">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="text-muted-foreground hover:text-foreground hover:bg-muted"
-            title="More options"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            type="button"
-          >
-            <DotsHorizontalIcon size={16} />
-          </Button>
-          {onOpenSettings && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="text-muted-foreground hover:text-foreground hover:bg-muted"
-              title="Settings"
-              onClick={onOpenSettings}
-              type="button"
-            >
-              <GearIcon size={16} />
-            </Button>
-          )}
+          {/* Right: actions */}
+          <div className="flex items-center gap-1 relative flex-shrink-0">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="text-muted-foreground hover:text-foreground hover:bg-muted"
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  type="button"
+                >
+                  <DotsHorizontalIcon size={16} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">More options</TooltipContent>
+            </Tooltip>
+            {onOpenSettings && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="text-muted-foreground hover:text-foreground hover:bg-muted"
+                    onClick={onOpenSettings}
+                    type="button"
+                  >
+                    <GearIcon size={16} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Settings</TooltipContent>
+              </Tooltip>
+            )}
           
           {isMenuOpen && (
             <>

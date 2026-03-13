@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 import { DEFAULT_SHORTCUTS, canonicalizeShortcut, mergeShortcutSettings } from "../shared/shortcuts";
 
@@ -195,23 +196,29 @@ export const SettingsPanel = ({
                       <p className="text-sm font-medium">Default notes folder</p>
                       <p className="text-xs text-muted-foreground">Where your new notes will be saved</p>
                     </div>
-                    <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-end sm:gap-4">
-                      <div
-                        className="truncate rounded bg-muted/30 px-2 py-1 font-mono text-xs text-muted-foreground"
-                        title={settings.defaultWorkspacePath}
-                      >
-                        {settings.defaultWorkspacePath}
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="shrink-0"
-                        type="button"
-                        onClick={onChooseFolder}
-                      >
-                        Change
-                      </Button>
-                    </div>
+                     <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-end sm:gap-4">
+                       <Tooltip>
+                         <TooltipTrigger asChild>
+                           <div
+                             className="truncate rounded bg-muted/30 px-2 py-1 font-mono text-xs text-muted-foreground"
+                           >
+                             {settings.defaultWorkspacePath}
+                           </div>
+                         </TooltipTrigger>
+                         <TooltipContent side="bottom">
+                           {settings.defaultWorkspacePath}
+                         </TooltipContent>
+                       </Tooltip>
+                       <Button
+                         variant="outline"
+                         size="sm"
+                         className="shrink-0"
+                         type="button"
+                         onClick={onChooseFolder}
+                       >
+                         Change
+                       </Button>
+                     </div>
                   </div>
 
                   <div className="flex flex-col justify-between gap-4 border-b border-border/40 py-4 sm:flex-row sm:items-center sm:gap-8">
@@ -278,63 +285,53 @@ export const SettingsPanel = ({
                 />
               </div>
 
-              {(["app", "editor"] as const).map((group) => {
-                const groupShortcuts = filteredShortcuts.filter((s) => s.group === group);
-                if (groupShortcuts.length === 0) return null;
-                const groupLabel = group === "app" ? "General" : "Editor";
-                return (
-                  <div key={group} className="space-y-1">
-                    <h3 className="mt-6 mb-2 text-sm font-semibold text-muted-foreground">{groupLabel}</h3>
-                    <div className="divide-y divide-border/40 border-t border-b border-border/40 bg-transparent">
-                      {groupShortcuts.map((shortcut) => (
-                        <div
-                          key={shortcut.id}
-                          className="mx-0 flex items-center justify-between gap-3 rounded-md px-2 py-3 transition-colors hover:bg-muted/30"
-                        >
-                          <span className="text-sm font-medium">{shortcut.label}</span>
-                          {editingShortcut === shortcut.id ? (
-                            <Input
-                              ref={inputRef}
-                              type="text"
-                              className="h-8 w-32 border-primary bg-background text-center font-mono text-xs shadow-sm"
-                              value={capturedKeys}
-                              onKeyDown={handleKeyDown}
-                              onBlur={() => {
-                                if (capturedKeys && editingShortcut) {
-                                  commitShortcutChange(editingShortcut, capturedKeys);
-                                }
-                                setEditingShortcut(null);
-                                setCapturedKeys("");
-                              }}
-                              placeholder="Press keys..."
-                              readOnly
-                            />
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className={`min-w-[96px] font-mono transition-colors ${
-                                conflictIds.has(shortcut.id)
-                                  ? "border-destructive bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
-                                  : ""
-                              }`}
-                              type="button"
-                              onClick={() => {
-                                setEditingShortcut(shortcut.id);
-                                setCapturedKeys(shortcut.keys);
-                                setShortcutError(null);
-                                setConflictIds(new Set());
-                              }}
-                            >
-                              {shortcut.keys}
-                            </Button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+              <div className="divide-y divide-border/40 border-t border-b border-border/40 bg-transparent">
+                {filteredShortcuts.map((shortcut) => (
+                  <div
+                    key={shortcut.id}
+                    className="mx-0 flex items-center justify-between gap-3 rounded-md px-2 py-3 transition-colors hover:bg-muted/30"
+                  >
+                    <span className="text-sm font-medium">{shortcut.label}</span>
+                    {editingShortcut === shortcut.id ? (
+                      <Input
+                        ref={inputRef}
+                        type="text"
+                        className="h-8 w-32 border-primary bg-background text-center font-mono text-xs shadow-sm"
+                        value={capturedKeys}
+                        onKeyDown={handleKeyDown}
+                        onBlur={() => {
+                          if (capturedKeys && editingShortcut) {
+                            commitShortcutChange(editingShortcut, capturedKeys);
+                          }
+                          setEditingShortcut(null);
+                          setCapturedKeys("");
+                        }}
+                        placeholder="Press keys..."
+                        readOnly
+                      />
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={`min-w-[96px] font-mono transition-colors ${
+                          conflictIds.has(shortcut.id)
+                            ? "border-destructive bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
+                            : ""
+                        }`}
+                        type="button"
+                        onClick={() => {
+                          setEditingShortcut(shortcut.id);
+                          setCapturedKeys(shortcut.keys);
+                          setShortcutError(null);
+                          setConflictIds(new Set());
+                        }}
+                      >
+                        {shortcut.keys}
+                      </Button>
+                    )}
                   </div>
-                );
-              })}
+                ))}
+              </div>
 
               {filteredShortcuts.length === 0 ? (
                 <div className="py-8 text-center text-sm text-muted-foreground">

@@ -28,32 +28,42 @@ export const Sidebar = ({
     setNodeToDelete(null);
   };
 
+  // Collapsed state: icon-only sidebar with centered logo in drag area
   if (isCollapsed) {
     return (
-      <aside className="flex flex-col h-full w-14 bg-sidebar border-r border-border items-center pb-4">
-        <div className="pt-8 flex items-center justify-center flex-shrink-0 text-sidebar-foreground">
-          <Logo size={16} />
+      <aside className="flex flex-col h-full w-20 bg-sidebar border-r border-border items-center pt-3">
+        {/* macOS drag area - centered logo with traffic light clearance */}
+        <div className="h-16 flex items-center justify-center flex-shrink-0 w-full" style={{ WebkitAppRegion: "drag" } as any}>
+          <div style={{ WebkitAppRegion: "no-drag" } as any} className="flex items-center justify-center">
+            <Logo size={20} />
+          </div>
         </div>
         <div className="flex-1" />
       </aside>
     );
   }
 
+  // Expanded state: full sidebar with integrated header drag area
   return (
     <aside className="flex flex-col h-full w-[280px] bg-sidebar border-r border-border">
-      <div className="flex items-center pl-20 pr-4 py-2 border-b border-border/40 flex-shrink-0">
-        <div className="mt-3">
-          <Logo size={18} showText={true} />
+      {/* Header with macOS drag area - centered logo with traffic light clearance */}
+      <div className="flex items-center justify-center min-h-12 border-b border-border/40 flex-shrink-0 bg-sidebar" style={{ WebkitAppRegion: "drag" } as any}>
+        <div style={{ WebkitAppRegion: "no-drag" } as any}>
+          <Logo size={20} showText={true} />
         </div>
       </div>
 
+      {/* Scrollable content area */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden py-3 min-h-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <div className="px-1">
+          {/* Section label */}
           <p className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Notes</p>
 
+          {/* Empty state */}
           {tree.length === 0 && !activePath ? (
             <p className="text-sm text-muted-foreground px-3">Create your first note from the command palette.</p>
           ) : (
+            /* File tree */
             tree.map((entry) => (
               <SidebarTreeNode
                 key={entry.node.path}
@@ -81,6 +91,7 @@ export const Sidebar = ({
         </div>
       </div>
 
+      {/* Delete confirmation dialog */}
       {nodeToDelete ? (
         <Dialog
           open={true}

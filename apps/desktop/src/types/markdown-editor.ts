@@ -1,5 +1,3 @@
-import type { ShortcutSetting } from "../shared/workspace";
-
 export type MarkdownEditorProps = {
   content: string;
   fileName: string | null;
@@ -21,7 +19,6 @@ export type MarkdownEditorProps = {
   canGoBack?: boolean;
   canGoForward?: boolean;
   autoOpenPDFSetting?: boolean;
-  editorShortcuts?: ShortcutSetting[] | null;
 };
 
 export type MarkdownEditorToast = {

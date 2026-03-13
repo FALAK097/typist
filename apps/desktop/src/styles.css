@@ -296,3 +296,26 @@ html, body {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* macOS drag region for window controls */
+.app-drag-region {
+  -webkit-app-region: drag;
+  user-select: none;
+  /* Ensure pointer events work for nested elements */
+  pointer-events: none;
+}
+
+/* Re-enable pointer events for interactive elements inside drag region */
+.app-drag-region button,
+.app-drag-region a,
+.app-drag-region input,
+.app-drag-region [role="button"] {
+  pointer-events: auto;
+  -webkit-app-region: no-drag;
+}
+
+/* Explicitly allow pointer events for any child elements */
+.app-drag-region > * {
+  pointer-events: auto;
+  -webkit-app-region: no-drag;
+}
