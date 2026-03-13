@@ -55,7 +55,8 @@ function getDefaultSettings(): AppSettings {
     sidebar: {
       items: [],
       expandedFolders: []
-    }
+    },
+    autoOpenPDF: true
   };
 }
 
@@ -153,6 +154,18 @@ function buildApplicationMenu(shortcuts: AppSettings["shortcuts"]) {
       ]
     },
     {
+      label: "Edit",
+      submenu: [
+        { role: "undo" },
+        { role: "redo" },
+        { type: "separator" },
+        { role: "cut" },
+        { role: "copy" },
+        { role: "paste" },
+        { role: "selectAll" }
+      ]
+    },
+    {
       label: "View",
       submenu: [{ role: "reload" }, { role: "toggleDevTools" }]
     }
@@ -212,22 +225,23 @@ async function sanitizeSettingsWithFileValidation(input: unknown): Promise<AppSe
     }
   }
 
-  return {
-    defaultWorkspacePath:
-      typeof candidate.defaultWorkspacePath === "string" && candidate.defaultWorkspacePath.trim().length > 0
-        ? candidate.defaultWorkspacePath
-        : defaults.defaultWorkspacePath,
-    themeId: typeof candidate.themeId === "string" && candidate.themeId.trim().length > 0 ? candidate.themeId : defaults.themeId,
-    themeMode: isThemeMode(candidate.themeMode) ? candidate.themeMode : defaults.themeMode,
-    recentFiles: validRecentFiles,
-    shortcuts: Array.isArray(candidate.shortcuts)
-      ? normalizeShortcutSettings(candidate.shortcuts.filter((s): s is { id: string; keys: string } => typeof s?.id === "string" && typeof s?.keys === "string"))
-      : defaults.shortcuts,
-    sidebar: {
-      items: validSidebarItems,
-      expandedFolders: Array.from(new Set(validExpandedFolders))
-    }
-  };
+   return {
+     defaultWorkspacePath:
+       typeof candidate.defaultWorkspacePath === "string" && candidate.defaultWorkspacePath.trim().length > 0
+         ? candidate.defaultWorkspacePath
+         : defaults.defaultWorkspacePath,
+     themeId: typeof candidate.themeId === "string" && candidate.themeId.trim().length > 0 ? candidate.themeId : defaults.themeId,
+     themeMode: isThemeMode(candidate.themeMode) ? candidate.themeMode : defaults.themeMode,
+     recentFiles: validRecentFiles,
+     shortcuts: Array.isArray(candidate.shortcuts)
+       ? normalizeShortcutSettings(candidate.shortcuts.filter((s): s is { id: string; keys: string } => typeof s?.id === "string" && typeof s?.keys === "string"))
+       : defaults.shortcuts,
+     sidebar: {
+       items: validSidebarItems,
+       expandedFolders: Array.from(new Set(validExpandedFolders))
+     },
+     autoOpenPDF: typeof candidate.autoOpenPDF === "boolean" ? candidate.autoOpenPDF : defaults.autoOpenPDF
+   };
 }
 
 function sanitizeSettingsPatch(patch: unknown): Partial<AppSettings> {
@@ -725,6 +739,10 @@ ipcMain.handle("settings:update", async (_event, patch: unknown) => {
 
 ipcMain.handle("app:revealInFinder", async (_event, targetPath: string) => {
   shell.showItemInFolder(targetPath);
+});
+
+ipcMain.handle("app:openExternal", async (_event, path: string) => {
+  shell.openPath(path);
 });
 
 async function getExternalPathTarget(targetPath: string) {

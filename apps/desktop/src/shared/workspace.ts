@@ -67,6 +67,7 @@ export type AppSettings = {
   recentFiles: string[];
   shortcuts: ShortcutSetting[];
   sidebar: SidebarState;
+  autoOpenPDF: boolean;
 };
 
 export type AppCommand = "open-file" | "open-folder" | "save" | "new-file" | "new-folder" | "search" | "quick-open" | "toggle-sidebar";

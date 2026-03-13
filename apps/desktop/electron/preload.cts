@@ -100,17 +100,23 @@ const api = {
   revealInFinder(targetPath: string) {
     return invokeWithRetry<boolean>("app:revealInFinder", targetPath);
   },
-  onExternalFile(listener: (target: ExternalFileTarget) => void) {
-    const wrapped = (_event: Electron.IpcRendererEvent, target: ExternalFileTarget) => {
-      listener(target);
-    };
+   onExternalFile(listener: (target: ExternalFileTarget) => void) {
+     const wrapped = (_event: Electron.IpcRendererEvent, target: ExternalFileTarget) => {
+       listener(target);
+     };
 
-    ipcRenderer.on("app:open-external", wrapped);
+     ipcRenderer.on("app:open-external", wrapped);
 
-    return () => {
-      ipcRenderer.removeListener("app:open-external", wrapped);
-    };
-  }
+     return () => {
+       ipcRenderer.removeListener("app:open-external", wrapped);
+     };
+   },
+   openExternal(path: string) {
+     return invokeWithRetry<void>("app:openExternal", path);
+   },
+   saveBlob(filePath: string, base64Data: string) {
+     return invokeWithRetry<void>("blob:save", filePath, base64Data);
+   }
 };
 
 contextBridge.exposeInMainWorld("typist", api);

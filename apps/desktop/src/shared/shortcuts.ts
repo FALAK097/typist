@@ -11,11 +11,27 @@ export type ShortcutId =
   | "next-note"
   | "toggle-sidebar"
   | "navigate-back"
-  | "navigate-forward";
+  | "navigate-forward"
+  // Editor formatting shortcuts
+  | "editor-h1"
+  | "editor-h2"
+  | "editor-h3"
+  | "editor-bullet"
+  | "editor-ordered"
+  | "editor-quote"
+  | "editor-codeblock"
+  | "editor-bold"
+  | "editor-italic"
+  | "editor-strike"
+  | "editor-inlinecode"
+  | "editor-link";
+
+export type ShortcutGroup = "app" | "editor";
 
 export type ShortcutDefinition = ShortcutSetting & {
   id: ShortcutId;
   label: string;
+  group: ShortcutGroup;
 };
 
 type ParsedShortcut = {
@@ -35,17 +51,31 @@ export type ShortcutEventLike = {
 };
 
 export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
-  { id: "command-palette", label: "Command Palette", keys: "⌘ P" },
-  { id: "new-note", label: "New Note", keys: "⇧ ⌘ S" },
-  { id: "open-file", label: "Open File", keys: "⌘ O" },
-  { id: "open-folder", label: "Open Folder", keys: "⇧ ⌘ O" },
-  { id: "save", label: "Save", keys: "⌘ S" },
-  { id: "settings", label: "Settings", keys: "⌘ ," },
-  { id: "previous-note", label: "Previous Note", keys: "⌥ ↑" },
-  { id: "next-note", label: "Next Note", keys: "⌥ ↓" },
-  { id: "toggle-sidebar", label: "Toggle Sidebar", keys: "⌘ B" },
-  { id: "navigate-back", label: "Navigate Back", keys: "⌘ [" },
-  { id: "navigate-forward", label: "Navigate Forward", keys: "⌘ ]" }
+  // App shortcuts
+  { id: "command-palette", label: "Command Palette", keys: "⌘ P", group: "app" },
+  { id: "new-note", label: "New Note", keys: "⌘ N", group: "app" },
+  { id: "open-file", label: "Open File", keys: "⌘ O", group: "app" },
+  { id: "open-folder", label: "Open Folder", keys: "⇧ ⌘ O", group: "app" },
+  { id: "save", label: "Save", keys: "⌘ S", group: "app" },
+  { id: "settings", label: "Settings", keys: "⌘ ,", group: "app" },
+  { id: "previous-note", label: "Previous Note", keys: "⌥ ↑", group: "app" },
+  { id: "next-note", label: "Next Note", keys: "⌥ ↓", group: "app" },
+  { id: "toggle-sidebar", label: "Toggle Sidebar", keys: "⇧ ⌘ \\", group: "app" },
+  { id: "navigate-back", label: "Navigate Back", keys: "⌘ [", group: "app" },
+  { id: "navigate-forward", label: "Navigate Forward", keys: "⌘ ]", group: "app" },
+  // Editor shortcuts
+  { id: "editor-h1", label: "Heading 1", keys: "⌘ ⌥ 1", group: "editor" },
+  { id: "editor-h2", label: "Heading 2", keys: "⌘ ⌥ 2", group: "editor" },
+  { id: "editor-h3", label: "Heading 3", keys: "⌘ ⌥ 3", group: "editor" },
+  { id: "editor-bullet", label: "Bullet List", keys: "⌘ ⇧ 8", group: "editor" },
+  { id: "editor-ordered", label: "Numbered List", keys: "⌘ ⇧ 7", group: "editor" },
+  { id: "editor-quote", label: "Quote", keys: "⌘ ⇧ .", group: "editor" },
+  { id: "editor-codeblock", label: "Code Block", keys: "⌘ ⌥ C", group: "editor" },
+  { id: "editor-bold", label: "Bold", keys: "⌘ B", group: "editor" },
+  { id: "editor-italic", label: "Italic", keys: "⌘ I", group: "editor" },
+  { id: "editor-strike", label: "Strikethrough", keys: "⌘ ⇧ X", group: "editor" },
+  { id: "editor-inlinecode", label: "Inline Code", keys: "⌘ E", group: "editor" },
+  { id: "editor-link", label: "Link", keys: "⌘ K", group: "editor" },
 ];
 
 const MODIFIER_TOKENS = new Set(["⌘", "⌥", "⇧"]);

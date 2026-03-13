@@ -1,19 +1,9 @@
 import { useRef } from "react";
 
-type EditorPaneProps = {
-  content: string;
-  path: string | null;
-  isDirty: boolean;
-  isSaving: boolean;
-  saveStateLabel: string;
-  onChange: (value: string) => void;
-  onSave: () => void;
-};
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
-type ToolbarAction = {
-  label: string;
-  insert: (selected: string) => string;
-};
+import type { EditorPaneProps, ToolbarAction } from "../types/editor-pane";
 
 const toolbarActions: ToolbarAction[] = [
   { label: "H1", insert: (selected) => `# ${selected || "Heading"}` },
@@ -26,7 +16,7 @@ const toolbarActions: ToolbarAction[] = [
   { label: "Rule", insert: () => "\n---\n" }
 ];
 
-export function EditorPane({
+export const EditorPane = ({
   content,
   path,
   isDirty,
@@ -34,7 +24,7 @@ export function EditorPane({
   saveStateLabel,
   onChange,
   onSave
-}: EditorPaneProps) {
+}: EditorPaneProps) => {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const applyToolbarAction = (action: ToolbarAction) => {
@@ -61,33 +51,40 @@ export function EditorPane({
   };
 
   return (
-    <section className="panel">
-      <div className="panel-header">
-        <div>
-          <p className="panel-label">Editor</p>
-          <h2>{path?.split("/").at(-1) ?? "No file selected"}</h2>
-          <p className="panel-meta">{saveStateLabel}</p>
+    <section className="h-full flex flex-col min-h-0">
+      <div className="flex items-start justify-between gap-6 px-6 pt-5 pb-4 border-b border-border/60">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold tracking-wider uppercase text-muted-foreground">Editor</p>
+          <h2 className="text-lg font-semibold text-foreground truncate">{path?.split("/").at(-1) ?? "No file selected"}</h2>
+          <p className="text-xs text-muted-foreground mt-1">{saveStateLabel}</p>
         </div>
-        <button className="primary-button" onClick={onSave} type="button" disabled={!path || !isDirty || isSaving}>
+        <Button
+          size="sm"
+          variant={!path || !isDirty || isSaving ? "outline" : "default"}
+          onClick={onSave}
+          type="button"
+          disabled={!path || !isDirty || isSaving}
+        >
           {isSaving ? "Saving..." : "Save"}
-        </button>
+        </Button>
       </div>
-      <div className="editor-toolbar">
+      <div className="px-6 py-3 border-b border-border/40 flex flex-wrap gap-1">
         {toolbarActions.map((action) => (
-          <button
+          <Button
             key={action.label}
-            className="toolbar-button"
+            variant="outline"
+            size="xs"
             type="button"
             disabled={!path}
             onClick={() => applyToolbarAction(action)}
           >
             {action.label}
-          </button>
+          </Button>
         ))}
       </div>
-      <textarea
+      <Textarea
         ref={textareaRef}
-        className="editor-textarea"
+        className="flex-1 min-h-0 w-full resize-none rounded-none border-0 bg-background px-6 py-4 text-sm leading-relaxed shadow-none focus-visible:ring-0"
         value={content}
         onChange={(event) => onChange(event.target.value)}
         placeholder="Open a markdown file to start writing."
@@ -95,4 +92,4 @@ export function EditorPane({
       />
     </section>
   );
-}
+};

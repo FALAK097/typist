@@ -1,6 +1,11 @@
 {
   "version": 1,
   "skills": {
+    "better-icons": {
+      "source": "better-auth/better-icons",
+      "sourceType": "github",
+      "computedHash": "7a08196e797b7cf56efa043a30a259d0249cf27cefc148c2a5b42e6ea2b13adb"
+    },
     "frontend-design": {
       "source": "anthropics/skills",
       "sourceType": "github",
