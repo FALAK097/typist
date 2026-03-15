@@ -32,12 +32,12 @@ export const Sidebar = ({
   if (isCollapsed) {
     return (
       <aside className="flex flex-col h-full w-20 bg-sidebar border-r border-border items-center pt-3">
-        {/* macOS drag area - centered logo with traffic light clearance */}
-         <div className="h-16 flex items-center justify-center flex-shrink-0 w-full" style={{ WebkitAppRegion: "drag" } as any}>
-           <div style={{ WebkitAppRegion: "no-drag" } as any} className="flex items-center justify-center">
-             <Logo size={32} />
-           </div>
-         </div>
+         {/* macOS drag area - centered logo with traffic light clearance */}
+          <div className="h-24 flex items-center justify-center flex-shrink-0 w-full" style={{ WebkitAppRegion: "drag" } as any}>
+            <div style={{ WebkitAppRegion: "no-drag" } as any} className="flex items-center justify-center">
+              <Logo size={64} />
+            </div>
+          </div>
         <div className="flex-1" />
       </aside>
     );
@@ -47,9 +47,9 @@ export const Sidebar = ({
   return (
     <aside className="flex flex-col h-full w-[280px] bg-sidebar border-r border-border">
        {/* Header with macOS drag area - centered logo with traffic light clearance */}
-       <div className="flex items-center justify-center min-h-16 border-b border-border/40 flex-shrink-0 bg-sidebar" style={{ WebkitAppRegion: "drag" } as any}>
+       <div className="flex items-center justify-center min-h-24 border-b border-border/40 flex-shrink-0 bg-sidebar" style={{ WebkitAppRegion: "drag" } as any}>
          <div style={{ WebkitAppRegion: "no-drag" } as any}>
-           <Logo size={32} showText={true} />
+           <Logo size={64} showText={true} />
          </div>
        </div>
 

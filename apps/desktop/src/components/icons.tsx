@@ -78,7 +78,6 @@ export const GlyphLogoMark = ({ size = 128, className }: IconProps) => {
       height={size}
       aria-hidden="true"
       className={className}
-      style={{ borderRadius: size / 4 }}
     />
   );
 };
