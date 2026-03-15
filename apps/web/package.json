@@ -1,12 +1,12 @@
 {
-  "name": "@typist/web",
+  "name": "@glyph/web",
   "version": "0.1.0",
   "private": true,
-  "description": "Typist - A minimal markdown viewer and editor for macOS and Windows landing page",
+  "description": "Glyph - A minimal markdown viewer and editor for macOS and Windows landing page",
   "author": "Falak Gala",
   "repository": {
     "type": "git",
-    "url": "https://github.com/FALAK097/typist.git"
+    "url": "https://github.com/FALAK097/glyph.git"
   },
   "keywords": [
     "markdown",
