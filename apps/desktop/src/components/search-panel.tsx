@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -6,6 +6,29 @@ import { Input } from "@/components/ui/input";
 
 import type { SearchPanelProps } from "../types/search-panel";
 import { SearchIcon } from "./icons";
+import type { SearchResult } from "@/shared/workspace";
+
+const ResultItem = memo(({ result, onOpenResult }: { result: SearchResult, onOpenResult: (result: SearchResult) => void }) => {
+  return (
+    <Button
+      className="h-auto w-full justify-start rounded-lg px-3 py-2 text-left"
+      variant="ghost"
+      type="button"
+      onClick={() => onOpenResult(result)}
+    >
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline justify-between gap-4">
+          <strong className="truncate text-sm font-medium text-foreground">{result.name}</strong>
+          <span className="shrink-0 text-xs text-muted-foreground">Line {result.line}</span>
+        </div>
+        <p className="line-clamp-2 text-xs text-muted-foreground">
+          {result.snippet || "Match found in file."}
+        </p>
+      </div>
+    </Button>
+  );
+});
+ResultItem.displayName = "ResultItem";
 
 export const SearchPanel = ({
   query,
@@ -23,7 +46,14 @@ export const SearchPanel = ({
       return;
     }
 
+    const previousFocus = document.activeElement as HTMLElement | null;
     requestAnimationFrame(() => inputRef.current?.focus());
+
+    return () => {
+      if (previousFocus && document.body.contains(previousFocus)) {
+        requestAnimationFrame(() => previousFocus.focus());
+      }
+    };
   }, [isOpen]);
 
   if (!isOpen) {
@@ -75,23 +105,11 @@ export const SearchPanel = ({
           ) : null}
           {!isLoading
             ? results.map((result) => (
-                <Button
+                <ResultItem
                   key={`${result.path}:${result.line}:${result.snippet}`}
-                  className="h-auto w-full justify-start rounded-lg px-3 py-2 text-left"
-                  variant="ghost"
-                  type="button"
-                  onClick={() => onOpenResult(result)}
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline justify-between gap-4">
-                      <strong className="truncate text-sm font-medium text-foreground">{result.name}</strong>
-                      <span className="shrink-0 text-xs text-muted-foreground">Line {result.line}</span>
-                    </div>
-                    <p className="line-clamp-2 text-xs text-muted-foreground">
-                      {result.snippet || "Match found in file."}
-                    </p>
-                  </div>
-                </Button>
+                  result={result}
+                  onOpenResult={onOpenResult}
+                />
               ))
             : null}
         </div>

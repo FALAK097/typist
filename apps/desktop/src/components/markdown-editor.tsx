@@ -237,15 +237,15 @@ export const MarkdownEditor = ({
       // Get markdown content from editor using the Markdown extension
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const markdown = (editor as any).storage.markdown.getMarkdown?.() || editor.getHTML();
-      const filename = fileName.replace(/\.md$/i, ".pdf");
+      const filename = fileName.replace(/\.(md|markdown)$/i, ".pdf");
 
       if (window.glyph) {
-        await window.glyph.exportMarkdownToPDF(markdown, filename);
+        const absolutePath = await window.glyph.exportMarkdownToPDF(markdown, filename);
         showToast("PDF exported successfully", `Saved as ${filename}`);
 
         // Auto-open PDF if setting is enabled
-        if (autoOpenPDFSetting) {
-          console.log("Auto-open PDF setting is enabled. PDF exported as:", filename);
+        if (autoOpenPDFSetting && absolutePath) {
+          await window.glyph.openExternal(absolutePath);
         }
       } else {
         showToast("Failed to export PDF", "Glyph API not available");

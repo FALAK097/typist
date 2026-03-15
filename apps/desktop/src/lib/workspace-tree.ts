@@ -1,6 +1,7 @@
 import type { DirectoryNode } from "../shared/workspace";
 
 import type { FlatFile } from "../types/app";
+
 import { getRelativePath } from "./paths";
 
 export function flattenFiles(nodes: DirectoryNode[], rootPath: string | null): FlatFile[] {
@@ -21,4 +22,3 @@ export function flattenFiles(nodes: DirectoryNode[], rootPath: string | null): F
 
   return items;
 }
-

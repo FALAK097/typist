@@ -382,6 +382,14 @@ function sanitizeSettingsPatch(patch: unknown): Partial<AppSettings> {
     );
   }
 
+  if ("autoOpenPDF" in candidate) {
+    if (typeof candidate.autoOpenPDF !== "boolean") {
+      throw new Error("autoOpenPDF must be a boolean.");
+    }
+
+    nextPatch.autoOpenPDF = candidate.autoOpenPDF;
+  }
+
   const invalidKeys = Object.keys(candidate).filter(
     (key) =>
       ![
@@ -391,6 +399,7 @@ function sanitizeSettingsPatch(patch: unknown): Partial<AppSettings> {
         "recentFiles",
         "shortcuts",
         "sidebar",
+        "autoOpenPDF",
       ].includes(key),
   );
 
@@ -882,8 +891,40 @@ ipcMain.handle("app:revealInFinder", async (_event, targetPath: string) => {
   shell.showItemInFolder(targetPath);
 });
 
-ipcMain.handle("app:openExternal", async (_event, path: string) => {
-  shell.openPath(path);
+ipcMain.handle(
+  "app:saveBlob",
+  async (_event, filePath: string, base64Data: string) => {
+    const buffer = Buffer.from(base64Data, "base64");
+    await fs.writeFile(filePath, buffer);
+  },
+);
+
+ipcMain.handle("app:openExternal", async (_event, inputPath: string) => {
+  if (typeof inputPath !== "string" || !inputPath.trim()) {
+    throw new Error("Invalid path provided.");
+  }
+
+  const normalizedPath = path.normalize(inputPath.trim());
+  
+  if (!path.isAbsolute(normalizedPath)) {
+    throw new Error("Path must be absolute.");
+  }
+
+  if (normalizedPath.includes("\0")) {
+    throw new Error("Path contains invalid characters.");
+  }
+
+  if (/^(http|https|file|data|javascript):/i.test(normalizedPath)) {
+    throw new Error("URL schemes are not permitted.");
+  }
+
+  try {
+    await fs.access(normalizedPath);
+  } catch {
+    throw new Error("Path does not exist.");
+  }
+
+  await shell.openPath(normalizedPath);
 });
 
 ipcMain.handle(
@@ -942,12 +983,6 @@ ipcMain.handle(
         writeStream.on("error", reject);
         doc.on("error", reject);
       });
-
-      // Open the PDF if autoOpenPDF setting is enabled
-      const settings = await loadSettings();
-      if (settings.autoOpenPDF) {
-        shell.openPath(savePath);
-      }
 
       return savePath;
     } catch (error) {

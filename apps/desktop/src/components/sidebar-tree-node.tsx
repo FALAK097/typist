@@ -170,7 +170,7 @@ export const SidebarTreeNode = ({
             onBlur={handleRenameSubmit}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
-                handleRenameSubmit();
+                event.currentTarget.blur();
               }
               if (event.key === "Escape") {
                 setIsRenaming(false);
@@ -196,7 +196,7 @@ export const SidebarTreeNode = ({
                     ref={menuButtonRef}
                     variant="ghost"
                     size="icon-xs"
-                    className="text-muted-foreground hover:text-foreground hover:bg-muted rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto"
+                    className="text-muted-foreground hover:text-foreground hover:bg-muted rounded opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto focus-visible:pointer-events-auto"
                     onClick={handleMenuToggle}
                     type="button"
                   >

@@ -1,7 +1,7 @@
 import type { DragPosition } from "../types/sidebar";
 import type { DirectoryNode, FileDocument, SidebarItemSetting, WorkspaceSnapshot } from "../shared/workspace";
 
-import { getBaseName, isFileInsideWorkspace } from "./paths";
+import { getBaseName, isFileInsideWorkspace, isSamePath, normalizePath } from "./paths";
 
 export function toSidebarItemSetting(node: DirectoryNode): SidebarItemSetting {
   return {
@@ -11,17 +11,18 @@ export function toSidebarItemSetting(node: DirectoryNode): SidebarItemSetting {
 }
 
 export function orderSidebarNodes(nodes: DirectoryNode[], orderedItems: SidebarItemSetting[]): DirectoryNode[] {
-  const remaining = new Map(nodes.map((node) => [node.path, node]));
+  const remaining = new Map(nodes.map((node) => [normalizePath(node.path).toLowerCase(), node]));
   const ordered: DirectoryNode[] = [];
 
   for (const item of orderedItems) {
-    const match = remaining.get(item.path);
+    const key = normalizePath(item.path).toLowerCase();
+    const match = remaining.get(key);
     if (!match || match.type !== item.kind) {
       continue;
     }
 
     ordered.push(match);
-    remaining.delete(item.path);
+    remaining.delete(key);
   }
 
   return [...ordered, ...remaining.values()];
@@ -33,8 +34,8 @@ export function reorderSidebarNodes(
   targetPath: string,
   position: DragPosition
 ): DirectoryNode[] {
-  const sourceIndex = nodes.findIndex((node) => node.path === sourcePath);
-  const targetIndex = nodes.findIndex((node) => node.path === targetPath);
+  const sourceIndex = nodes.findIndex((node) => isSamePath(node.path, sourcePath));
+  const targetIndex = nodes.findIndex((node) => isSamePath(node.path, targetPath));
 
   if (sourceIndex === -1 || targetIndex === -1 || sourceIndex === targetIndex) {
     return nodes;
@@ -42,7 +43,7 @@ export function reorderSidebarNodes(
 
   const nextNodes = [...nodes];
   const [sourceNode] = nextNodes.splice(sourceIndex, 1);
-  const adjustedTargetIndex = nextNodes.findIndex((node) => node.path === targetPath);
+  const adjustedTargetIndex = nextNodes.findIndex((node) => isSamePath(node.path, targetPath));
   const insertIndex = position === "before" ? adjustedTargetIndex : adjustedTargetIndex + 1;
   nextNodes.splice(insertIndex, 0, sourceNode);
   return nextNodes;
@@ -57,7 +58,7 @@ export function upsertSidebarFolder(nodes: DirectoryNode[], workspace: Workspace
   };
 
   const nextNodes = nodes.filter((node) => !(node.type === "file" && isFileInsideWorkspace(node.path, workspace.rootPath)));
-  const existingIndex = nextNodes.findIndex((node) => node.type === "directory" && node.path === workspace.rootPath);
+  const existingIndex = nextNodes.findIndex((node) => node.type === "directory" && isSamePath(node.path, workspace.rootPath));
 
   if (existingIndex === -1) {
     return [...nextNodes, nextFolder];
@@ -70,7 +71,7 @@ export function upsertSidebarFile(nodes: DirectoryNode[], file: Pick<FileDocumen
   const isCoveredByFolder = nodes.some((node) => node.type === "directory" && isFileInsideWorkspace(file.path, node.path));
 
   if (isCoveredByFolder) {
-    return nodes.filter((node) => !(node.type === "file" && node.path === file.path));
+    return nodes.filter((node) => !(node.type === "file" && isSamePath(node.path, file.path)));
   }
 
   const nextFile: DirectoryNode = {
@@ -79,7 +80,7 @@ export function upsertSidebarFile(nodes: DirectoryNode[], file: Pick<FileDocumen
     path: file.path
   };
 
-  const existingIndex = nodes.findIndex((node) => node.type === "file" && node.path === file.path);
+  const existingIndex = nodes.findIndex((node) => node.type === "file" && isSamePath(node.path, file.path));
   if (existingIndex === -1) {
     return [...nodes, nextFile];
   }
@@ -89,7 +90,7 @@ export function upsertSidebarFile(nodes: DirectoryNode[], file: Pick<FileDocumen
 
 export function removeSidebarPath(nodes: DirectoryNode[], targetPath: string): DirectoryNode[] {
   return nodes.flatMap<DirectoryNode>((node) => {
-    if (node.path === targetPath) {
+    if (isSamePath(node.path, targetPath)) {
       return [];
     }
 
@@ -111,7 +112,7 @@ export function renameSidebarFile(
       return { ...node, children: renameSidebarFile(node.children, oldPath, renamedFile) };
     }
 
-    if (node.path !== oldPath) {
+    if (!isSamePath(node.path, oldPath)) {
       return node;
     }
 

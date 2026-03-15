@@ -8,7 +8,7 @@ import { useWorkspaceStore } from "@/store/workspace";
 import { applyTheme } from "@/theme/themes";
 
 import { getErrorMessage } from "@/lib/errors";
-import { isFileInsideWorkspace } from "@/lib/paths";
+import { isFileInsideWorkspace, isSamePath, normalizePath } from "@/lib/paths";
 import {
   orderSidebarNodes,
   removeSidebarPath,
@@ -68,10 +68,10 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
   const readingTime = Math.max(1, Math.round(wordCount / 200));
 
   const visibleSidebarNodes = useMemo<SidebarTopLevelNode[]>(() => {
-    const expanded = new Set(expandedFolderPaths);
+    const expanded = new Set(expandedFolderPaths.map(p => normalizePath(p).toLowerCase()));
     return sidebarNodes.map((node) => ({
       node,
-      isExpanded: node.type === "directory" ? expanded.has(node.path) : true
+      isExpanded: node.type === "directory" ? expanded.has(normalizePath(node.path).toLowerCase()) : true
     }));
   }, [expandedFolderPaths, sidebarNodes]);
 
@@ -88,7 +88,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
   const syncWorkspace = useCallback((workspace: WorkspaceSnapshot) => {
     setWorkspace(workspace);
     setSidebarNodes((prev) => upsertSidebarFolder(prev, workspace));
-    setExpandedFolderPaths((prev) => (prev.includes(workspace.rootPath) ? prev : [...prev, workspace.rootPath]));
+    setExpandedFolderPaths((prev) => (prev.some((p) => isSamePath(p, workspace.rootPath)) ? prev : [...prev, workspace.rootPath]));
   }, [setWorkspace]);
 
   const syncOpenedFile = useCallback(async (file: FileDocument) => {
@@ -297,17 +297,17 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     const prevPath = goBack();
     if (prevPath) {
       const file = await glyph.readFile(prevPath);
-      setActiveFile(file);
+      await syncOpenedFile(file);
     }
-  }, [goBack, glyph, setActiveFile]);
+  }, [goBack, glyph, syncOpenedFile]);
 
   const navigateForward = useCallback(async () => {
     const nextPath = goForward();
     if (nextPath) {
       const file = await glyph.readFile(nextPath);
-      setActiveFile(file);
+      await syncOpenedFile(file);
     }
-  }, [goForward, glyph, setActiveFile]);
+  }, [goForward, glyph, syncOpenedFile]);
 
   const handleDeleteFile = useCallback(async (filePath: string) => {
     try {
@@ -340,8 +340,8 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
 
   const handleToggleFolder = useCallback((folderPath: string) => {
     setExpandedFolderPaths((prev) => (
-      prev.includes(folderPath)
-        ? prev.filter((path) => path !== folderPath)
+      prev.some((path) => isSamePath(path, folderPath))
+        ? prev.filter((path) => !isSamePath(path, folderPath))
         : [...prev, folderPath]
     ));
   }, []);
@@ -644,17 +644,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
           return;
         }
 
-        if (event.ctrlKey && event.shiftKey && event.key === "[") {
-          event.preventDefault();
-          void moveNote(-1);
-          return;
-        }
 
-        if (event.ctrlKey && event.shiftKey && event.key === "]") {
-          event.preventDefault();
-          void moveNote(1);
-          return;
-        }
       }
     };
 

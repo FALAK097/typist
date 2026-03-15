@@ -147,13 +147,13 @@ const api = {
     };
   },
   openExternal(path: string) {
-    return invokeWithRetry<void>("app:openExternal", path);
+    return ipcRenderer.invoke("app:openExternal", path);
   },
   saveBlob(filePath: string, base64Data: string) {
-    return invokeWithRetry<void>("blob:save", filePath, base64Data);
+    return ipcRenderer.invoke("app:saveBlob", filePath, base64Data);
   },
   exportMarkdownToPDF(markdown: string, filename: string) {
-    return invokeWithRetry<void>("app:exportPDF", markdown, filename);
+    return invokeWithRetry<string>("app:exportPDF", markdown, filename);
   },
 };
 

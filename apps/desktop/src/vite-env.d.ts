@@ -48,6 +48,8 @@ declare global {
       onExternalFile: (
         listener: (target: ExternalFileTarget) => void,
       ) => () => void;
+      openExternal: (path: string) => Promise<void>;
+
       exportMarkdownToPDF: (
         markdown: string,
         filename: string,

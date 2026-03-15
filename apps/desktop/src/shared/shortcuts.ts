@@ -49,7 +49,13 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
   { id: "navigate-forward", label: "Navigate Forward", keys: "⌘ ]" },
 ];
 
-const MODIFIER_TOKENS = new Set(["⌘", "⌥", "⇧"]);
+export const MODIFIER_TOKENS = {
+  cmdOrCtrl: "⌘",
+  alt: "⌥",
+  shift: "⇧",
+} as const;
+
+const MODIFIER_TOKENS_SET = new Set(Object.values(MODIFIER_TOKENS));
 
 const NORMALIZED_KEY_ALIASES: Record<string, string> = {
   up: "arrowup",
@@ -105,20 +111,45 @@ const ELECTRON_KEY_ALIASES: Record<string, string> = {
   ".": "Period"
 };
 
+const SHIFTED_SYMBOL_ALIASES: Record<string, string> = {
+  "!": "1",
+  "@": "2",
+  "#": "3",
+  $: "4",
+  "%": "5",
+  "^": "6",
+  "&": "7",
+  "*": "8",
+  "(": "9",
+  ")": "0",
+  _: "-",
+  "+": "=",
+  "{": "[",
+  "}": "]",
+  "|": "\\",
+  ":": ";",
+  '"': "'",
+  "<": ",",
+  ">": ".",
+  "?": "/",
+  "~": "`",
+};
+
 function normalizeShortcutKeyToken(token: string): string | null {
   const trimmed = token.trim();
 
-  if (!trimmed || MODIFIER_TOKENS.has(trimmed)) {
+  if (!trimmed || MODIFIER_TOKENS_SET.has(trimmed as any)) {
     return null;
   }
 
-  const lower = trimmed.toLowerCase();
-  if (NORMALIZED_KEY_ALIASES[lower]) {
-    return NORMALIZED_KEY_ALIASES[lower];
+  let lower = trimmed.toLowerCase();
+  
+  if (trimmed.length === 1 && SHIFTED_SYMBOL_ALIASES[trimmed]) {
+    lower = SHIFTED_SYMBOL_ALIASES[trimmed];
   }
 
-  if (trimmed.length === 1) {
-    return lower;
+  if (NORMALIZED_KEY_ALIASES[lower]) {
+    return NORMALIZED_KEY_ALIASES[lower];
   }
 
   return lower;
@@ -151,9 +182,9 @@ export function parseShortcut(keys: string): ParsedShortcut | null {
   }
 
   return {
-    primary: parts.includes("⌘"),
-    alt: parts.includes("⌥"),
-    shift: parts.includes("⇧"),
+    primary: parts.includes(MODIFIER_TOKENS.cmdOrCtrl),
+    alt: parts.includes(MODIFIER_TOKENS.alt),
+    shift: parts.includes(MODIFIER_TOKENS.shift),
     key
   };
 }
@@ -166,13 +197,13 @@ export function canonicalizeShortcut(keys: string): string | null {
 
   const parts: string[] = [];
   if (parsed.shift) {
-    parts.push("⇧");
+    parts.push(MODIFIER_TOKENS.shift);
   }
   if (parsed.alt) {
-    parts.push("⌥");
+    parts.push(MODIFIER_TOKENS.alt);
   }
   if (parsed.primary) {
-    parts.push("⌘");
+    parts.push(MODIFIER_TOKENS.cmdOrCtrl);
   }
   parts.push(formatShortcutKey(parsed.key));
 

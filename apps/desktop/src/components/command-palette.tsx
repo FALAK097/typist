@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import type { CommandPaletteItem, CommandPaletteProps } from "../types/command-palette";
 import { Button } from "@/components/ui/button";
@@ -58,6 +58,12 @@ export const CommandPalette = ({
     });
   }, [isOpen, selectedIndex]);
 
+  const handleOpenChange = useCallback((open: boolean) => {
+    if (!open) {
+      onClose();
+    }
+  }, [onClose]);
+
   if (!isOpen) {
     return null;
   }
@@ -65,16 +71,14 @@ export const CommandPalette = ({
   return (
     <Dialog
       open={isOpen}
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
-      }}
+      onOpenChange={handleOpenChange}
     >
       <DialogContent
         showCloseButton={false}
+        aria-labelledby="command-palette-title"
         className="w-[90%] max-w-lg p-0 overflow-hidden border-border/50"
       >
+        <h2 id="command-palette-title" className="sr-only">Command Palette</h2>
         {/* Search input */}
         <div className="px-4 py-3 border-b border-border/30 bg-background">
           <Input
@@ -116,13 +120,9 @@ export const CommandPalette = ({
         {/* Results container */}
         <div
           ref={scrollContainerRef}
-          className="overflow-y-auto max-h-[380px]"
+          className="overflow-y-auto max-h-[380px] scrollbar-none"
           role="listbox"
           aria-label="Command palette results"
-          style={{
-            scrollbarWidth: "none",
-            msOverflowStyle: "none"
-          }}
         >
           {items.length === 0 ? (
             <div className="py-12 text-center text-sm text-muted-foreground">
@@ -192,12 +192,6 @@ export const CommandPalette = ({
             </div>
           )}
         </div>
-
-        <style>{`
-          .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-          }
-        `}</style>
       </DialogContent>
     </Dialog>
   );

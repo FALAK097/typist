@@ -3,6 +3,9 @@ import {
   Add01Icon as Add01Svg,
   ArrowLeft01Icon as ArrowLeft01Svg,
   ArrowRight01Icon as ArrowRight01Svg,
+  ArrowRight02Icon as ArrowRight02Svg,
+  ArrowUp01Icon as ArrowUp01Svg,
+  ArrowDown01Icon as ArrowDown01Svg,
   Cancel01Icon as Cancel01Svg,
   CheckmarkCircle01Icon as CheckmarkCircle01Svg,
   CopyIcon as CopySvg,
@@ -19,7 +22,9 @@ import {
   PanelRightIcon as HugePanelRightIcon,
   PencilIcon as PencilSvg,
   Search01Icon as Search01Svg,
-  Settings01Icon as Settings01Svg
+  Settings01Icon as Settings01Svg,
+  UnfoldMoreIcon as UnfoldMoreSvg,
+  Tick02Icon as Tick02Svg
 } from "@hugeicons/core-free-icons";
 
 import type { HugeIconProps, IconProps } from "../types/icons";
@@ -46,7 +51,11 @@ export const TrashIcon = (props: IconProps) => <HugeIcon icon={Delete02Svg} {...
 export const PanelLeftIcon = (props: IconProps) => <HugeIcon icon={HugePanelLeftIcon} {...props} />;
 export const PanelRightIcon = (props: IconProps) => <HugeIcon icon={HugePanelRightIcon} {...props} />;
 export const ArrowLeftIcon = (props: IconProps) => <HugeIcon icon={ArrowLeft01Svg} {...props} />;
-export const ArrowRightIcon = (props: IconProps) => <HugeIcon icon={ArrowRight01Svg} {...props} />;
+export const ArrowRightIcon = (props: IconProps) => <HugeIcon icon={ArrowRight02Svg} {...props} />;
+export const ArrowUpIcon = (props: IconProps) => <HugeIcon icon={ArrowUp01Svg} {...props} />;
+export const ArrowDownIcon = (props: IconProps) => <HugeIcon icon={ArrowDown01Svg} {...props} />;
+export const UnfoldMoreIcon = (props: IconProps) => <HugeIcon icon={UnfoldMoreSvg} {...props} />;
+export const TickIcon = (props: IconProps) => <HugeIcon icon={Tick02Svg} {...props} />;
 export const SearchIcon = (props: IconProps) => <HugeIcon icon={Search01Svg} {...props} />;
 export const GearIcon = (props: IconProps) => <HugeIcon icon={Settings01Svg} {...props} />;
 export const ShortcutIcon = (props: IconProps) => <HugeIcon icon={KeyboardSvg} {...props} />;

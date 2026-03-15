@@ -1,9 +1,11 @@
-import * as React from "react"
-import { Input as InputPrimitive } from "@base-ui/react/input"
+import { forwardRef, type ComponentPropsWithoutRef } from "react";
+import { Input as InputPrimitive } from "@base-ui/react/input";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
-const Input = React.forwardRef<HTMLInputElement, React.ComponentPropsWithoutRef<"input">>(
+export type InputProps = ComponentPropsWithoutRef<"input">;
+
+const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, ...props }, ref) => {
     return (
       <InputPrimitive

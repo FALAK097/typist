@@ -22,7 +22,14 @@ export const QuickOpenPanel = ({
       return;
     }
 
+    const previousFocus = document.activeElement as HTMLElement | null;
     requestAnimationFrame(() => inputRef.current?.focus());
+
+    return () => {
+      if (previousFocus && document.body.contains(previousFocus)) {
+        requestAnimationFrame(() => previousFocus.focus());
+      }
+    };
   }, [isOpen]);
 
   if (!isOpen) {

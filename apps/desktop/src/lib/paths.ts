@@ -2,6 +2,11 @@ export function normalizePath(filePath: string): string {
   return filePath.replace(/\\/g, "/");
 }
 
+export function isSamePath(a: string | null | undefined, b: string | null | undefined): boolean {
+  if (!a || !b) return false;
+  return normalizePath(a).toLowerCase() === normalizePath(b).toLowerCase();
+}
+
 export function getBaseName(filePath: string): string {
   return filePath.split(/[\\/]/).at(-1) ?? filePath;
 }
@@ -14,7 +19,10 @@ export function getRelativePath(filePath: string, rootPath: string | null): stri
   const normalizedFilePath = normalizePath(filePath);
   const normalizedRootPath = normalizePath(rootPath).replace(/\/+$/, "");
 
-  if (normalizedFilePath.startsWith(`${normalizedRootPath}/`)) {
+  const fileLower = normalizedFilePath.toLowerCase();
+  const rootLower = normalizedRootPath.toLowerCase();
+
+  if (fileLower.startsWith(`${rootLower}/`)) {
     return normalizedFilePath.slice(normalizedRootPath.length + 1);
   }
 
@@ -28,6 +36,6 @@ export function isFileInsideWorkspace(filePath: string, rootPath: string | null)
 
   const normalizedFilePath = normalizePath(filePath);
   const normalizedRootPath = normalizePath(rootPath).replace(/\/+$/, "");
-  return normalizedFilePath.startsWith(`${normalizedRootPath}/`);
+  return normalizedFilePath.toLowerCase().startsWith(`${normalizedRootPath.toLowerCase()}/`);
 }
 

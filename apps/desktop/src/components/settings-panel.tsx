@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
-import { DEFAULT_SHORTCUTS, canonicalizeShortcut, mergeShortcutSettings } from "../shared/shortcuts";
+import { DEFAULT_SHORTCUTS, canonicalizeShortcut, mergeShortcutSettings, MODIFIER_TOKENS } from "../shared/shortcuts";
 
 import type { ThemeMode } from "../shared/workspace";
 import type { SettingsPanelProps } from "../types/settings-panel";
@@ -53,9 +53,9 @@ export const SettingsPanel = ({
 
   const formatKeyCombo = (e: React.KeyboardEvent<HTMLInputElement>): string => {
     const parts: string[] = [];
-    if (e.metaKey || e.ctrlKey) parts.push("⌘");
-    if (e.altKey) parts.push("⌥");
-    if (e.shiftKey) parts.push("⇧");
+    if (e.metaKey || e.ctrlKey) parts.push(MODIFIER_TOKENS.cmdOrCtrl);
+    if (e.altKey) parts.push(MODIFIER_TOKENS.alt);
+    if (e.shiftKey) parts.push(MODIFIER_TOKENS.shift);
     const key = e.key;
     if (!["Meta", "Control", "Alt", "Shift"].includes(key)) {
       parts.push(key);
@@ -146,8 +146,10 @@ export const SettingsPanel = ({
       }}
     >
       <DialogContent
+        aria-labelledby="settings-dialog-title"
         className="max-w-[calc(100%-2rem)] gap-0 overflow-hidden p-0 sm:max-w-[900px] md:grid md:h-[550px] md:max-h-[85vh] md:grid-cols-[240px_1fr]"
       >
+        <h2 id="settings-dialog-title" className="sr-only">Settings</h2>
         <div className="border-b border-border bg-muted/30 p-4 md:border-b-0 md:border-r md:border-border md:py-4 md:px-4 md:flex md:flex-col md:justify-between">
           <div className="space-y-8 md:mt-4">
             <div>

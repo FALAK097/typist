@@ -54,7 +54,7 @@ body {
   --sidebar-border: oklch(0.925 0.005 214.3);
   --sidebar-ring: oklch(0.723 0.014 214.4);
   --font-sans:
-    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Geist Variable", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
@@ -148,7 +148,7 @@ body {
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --font-sans: "Geist Variable", sans-serif;
+  --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);
   --color-chart-5: var(--chart-5);
@@ -249,6 +249,12 @@ body {
   gap: 8px;
   transition: background 80ms ease-out;
 }
+@media (prefers-reduced-motion: reduce) {
+  .slash-row {
+    transition: none;
+  }
+}
+
 .slash-row:hover,
 .slash-row--selected {
   background: var(--accent);

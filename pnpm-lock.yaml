@@ -100,9 +100,6 @@ importers:
       react-dom:
         specifier: ^19.0.0
         version: 19.2.4(react@19.2.4)
-      shadcn:
-        specifier: ^4.0.6
-        version: 4.0.6(@types/node@22.19.15)(typescript@5.9.3)
       tailwind-merge:
         specifier: ^3.5.0
         version: 3.5.0
@@ -149,6 +146,9 @@ importers:
       eslint-plugin-react-refresh:
         specifier: ^0.4.19
         version: 0.4.26(eslint@9.39.4(jiti@2.6.1))
+      shadcn:
+        specifier: ^4.0.6
+        version: 4.0.6(@types/node@22.19.15)(typescript@5.9.3)
       tailwindcss:
         specifier: ^4.2.1
         version: 4.2.1
