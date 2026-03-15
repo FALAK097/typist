@@ -1,11 +1,11 @@
-# Typist
+# Glyph
 
-Typist is a workspace repo with:
+Glyph is a workspace repo with:
 
 - `apps/desktop`: Electron markdown editor/viewer
 - `apps/web`: landing page and download surface
 
-The current source of truth for scope and progress is [prd.md](/Users/falakgala/projects/typist/prd.md).
+The current source of truth for scope and progress is [prd.md](/Users/falakgala/projects/glyph/prd.md).
 
 ## Requirements
 
@@ -87,7 +87,7 @@ pnpm typecheck:web
 ## Project Layout
 
 ```text
-typist/
+glyph/
 ├── apps/
 │   ├── desktop/
 │   │   ├── electron/
@@ -102,7 +102,7 @@ typist/
 
 ## Current Desktop Capabilities
 
-- default notes workspace in `Documents/Typist`
+- default notes workspace in `Documents/Glyph`
 - open markdown files
 - open markdown folders
 - browse notes in a sidebar

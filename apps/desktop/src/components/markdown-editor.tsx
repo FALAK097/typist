@@ -214,9 +214,9 @@ export const MarkdownEditor = ({
   };
 
   const handleOpenExternal = async () => {
-    if (filePath && window.typist) {
+    if (filePath && window.glyph) {
       try {
-        const didReveal = await window.typist.revealInFinder(filePath);
+        const didReveal = await window.glyph.revealInFinder(filePath);
         if (!didReveal) {
           showToast("Could not open in Finder", "");
         }
@@ -239,8 +239,8 @@ export const MarkdownEditor = ({
       const markdown = (editor as any).storage.markdown.getMarkdown?.() || editor.getHTML();
       const filename = fileName.replace(/\.md$/i, ".pdf");
 
-      if (window.typist) {
-        await window.typist.exportMarkdownToPDF(markdown, filename);
+      if (window.glyph) {
+        await window.glyph.exportMarkdownToPDF(markdown, filename);
         showToast("PDF exported successfully", `Saved as ${filename}`);
 
         // Auto-open PDF if setting is enabled
@@ -248,7 +248,7 @@ export const MarkdownEditor = ({
           console.log("Auto-open PDF setting is enabled. PDF exported as:", filename);
         }
       } else {
-        showToast("Failed to export PDF", "Typist API not available");
+        showToast("Failed to export PDF", "Glyph API not available");
       }
     } catch (err) {
       console.error("Failed to export PDF:", err);
@@ -365,7 +365,7 @@ export const MarkdownEditor = ({
             >
               <div className="flex items-center gap-2">
                 <SearchIcon size={13} className="opacity-60 flex-shrink-0" />
-                <span>Search typist</span>
+                <span>Search glyph</span>
               </div>
               <span className="font-mono text-xs opacity-50 ml-4 flex-shrink-0">
                 {commandPaletteShortcut ?? "⌘P"}

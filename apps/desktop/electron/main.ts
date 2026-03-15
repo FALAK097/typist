@@ -24,8 +24,8 @@ const isDev = !app.isPackaged;
 const devServerUrl = "http://127.0.0.1:5173";
 
 // Set app name early
-app.setName("Typist");
-app.setAppUserModelId("com.typist.app");
+app.setName("Glyph");
+app.setAppUserModelId("com.glyph.app");
 
 const iconPath = isDev
   ? path.join(__dirname, "../public/icon-128x128.svg")
@@ -47,7 +47,7 @@ function getSettingsPath() {
 }
 
 function getDefaultWorkspacePath() {
-  return path.join(app.getPath("documents"), "Typist");
+  return path.join(app.getPath("documents"), "Glyph");
 }
 
 function getDefaultSettings(): AppSettings {
@@ -735,7 +735,7 @@ async function createWindow() {
     console.error("Renderer bootstrap failed:", error);
     await mainWindow.loadURL(
       `data:text/html,${encodeURIComponent(
-        "<!doctype html><meta charset='utf-8'><style>body{font-family:system-ui;padding:24px;line-height:1.5}</style><h1>Typist could not start the renderer.</h1><p>Check the dev server logs and restart <code>pnpm dev:desktop</code>.</p>",
+        "<!doctype html><meta charset='utf-8'><style>body{font-family:system-ui;padding:24px;line-height:1.5}</style><h1>Glyph could not start the renderer.</h1><p>Check the dev server logs and restart <code>pnpm dev:desktop</code>.</p>",
       )}`,
     );
   }

@@ -1,12 +1,12 @@
 {
-  "name": "@typist/desktop",
+  "name": "@glyph/desktop",
   "version": "0.1.0",
   "private": true,
-  "description": "Typist - A minimal markdown viewer and editor for macOS and Windows. Browse local notes, edit markdown fast, and read rendered documents in a focused desktop workspace.",
+  "description": "Glyph - A minimal markdown viewer and editor for macOS and Windows. Browse local notes, edit markdown fast, and read rendered documents in a focused desktop workspace.",
   "author": "Falak Gala",
   "repository": {
     "type": "git",
-    "url": "https://github.com/FALAK097/typist.git"
+    "url": "https://github.com/FALAK097/glyph.git"
   },
   "keywords": [
     "markdown",

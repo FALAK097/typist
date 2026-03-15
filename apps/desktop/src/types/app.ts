@@ -5,6 +5,6 @@ export type FlatFile = {
 };
 
 export type DesktopAppProps = {
-  typist: NonNullable<Window["typist"]>;
+  glyph: NonNullable<Window["glyph"]>;
 };
 

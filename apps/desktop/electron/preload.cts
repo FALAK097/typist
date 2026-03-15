@@ -157,4 +157,4 @@ const api = {
   },
 };
 
-contextBridge.exposeInMainWorld("typist", api);
+contextBridge.exposeInMainWorld("glyph", api);

@@ -178,7 +178,7 @@ export const SettingsPanel = ({
             </div>
           </div>
           <div className="hidden px-3 text-xs text-muted-foreground/60 md:block">
-            Typist Desktop
+            Glyph Desktop
             <br />
             v1.0.0
           </div>
@@ -224,7 +224,7 @@ export const SettingsPanel = ({
                   <div className="flex flex-col justify-between gap-4 border-b border-border/40 py-4 sm:flex-row sm:items-center sm:gap-8">
                     <div className="shrink-0 space-y-1">
                       <p className="text-sm font-medium">Appearance</p>
-                      <p className="text-xs text-muted-foreground">Customise how Typist looks on your device</p>
+                      <p className="text-xs text-muted-foreground">Customise how Glyph looks on your device</p>
                     </div>
                     <Select
                       value={settings.themeMode}

@@ -11,8 +11,8 @@ import { SettingsPanel } from "./settings-panel";
 import { Sidebar } from "./sidebar";
 import { TooltipProvider } from "./ui/tooltip";
 
-export const DesktopApp = ({ typist }: DesktopAppProps) => {
-  const controller = useDesktopAppController(typist);
+export const DesktopApp = ({ glyph }: DesktopAppProps) => {
+  const controller = useDesktopAppController(glyph);
 
   return (
     <TooltipProvider>

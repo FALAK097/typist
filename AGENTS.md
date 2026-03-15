@@ -1,4 +1,4 @@
-# Typist — Agent Guidelines
+# Glyph — Agent Guidelines
 
 ## Repository Overview
 
@@ -96,7 +96,7 @@ This repo ships local skills for various domains. **Load them before working on 
 
 ## Cross-Platform (macOS & Windows)
 
-Typist targets **macOS and Windows**. Every feature must be tested mentally (and physically where possible) on both platforms.
+Glyph targets **macOS and Windows**. Every feature must be tested mentally (and physically where possible) on both platforms.
 
 ### Path handling
 
@@ -163,7 +163,7 @@ pnpm typecheck:web        # Type-check web only
 ### Linting
 
 ```bash
-pnpm --filter @typist/desktop lint   # runs: eslint . --ext ts,tsx
+pnpm --filter @glyph/desktop lint   # runs: eslint . --ext ts,tsx
 ```
 
 ### Tests
@@ -175,7 +175,7 @@ There is currently **no test framework** set up. Update this section when tests 
 ## Project Structure
 
 ```
-typist/
+glyph/
 ├── .agents/skills/
 │   └── electron/          # Local Electron skill (SKILL.md + api/ + examples/ + templates/)
 ├── apps/
@@ -266,7 +266,7 @@ useEffect(() => {
 }, [deps]);
 
 useEffect(() => {
-  return typist.onExternalFile(async (target) => { ... }); // cleanup returned
+  return glyph.onExternalFile(async (target) => { ... }); // cleanup returned
 }, [deps]);
 ```
 
@@ -278,7 +278,7 @@ function getErrorMessage(error: unknown): string {
 }
 
 try {
-  const saved = await typist.saveFile(path, content);
+  const saved = await glyph.saveFile(path, content);
   markSaved(saved);
 } catch (err) {
   setError(err instanceof Error ? err.message : "Unable to save file.");
@@ -294,7 +294,7 @@ try {
 ### IPC (Electron)
 
 - Channels: `workspace:*`, `settings:*`, `dialog:*`, `app:*`, `sidebar:*`.
-- Expose renderer API only via `contextBridge.exposeInMainWorld("typist", api)`.
+- Expose renderer API only via `contextBridge.exposeInMainWorld("glyph", api)`.
 - Validate and sanitize all inputs in the main process. Never use `sendSync`.
 
 ---
@@ -314,5 +314,5 @@ try {
 - `apps/desktop/src/shared/` is framework-agnostic — no React imports.
 - `prd.md` is the product source of truth. Read it before architectural decisions.
 - Context isolation and sandbox are **enabled** — never disable them.
-- The renderer has no Node.js/Electron access — all OS/file ops go through the `typist` preload API.
+- The renderer has no Node.js/Electron access — all OS/file ops go through the `glyph` preload API.
 - All Electron work must reference `.agents/skills/electron/` for patterns, API signatures, and security best practices.

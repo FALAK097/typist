@@ -13,7 +13,7 @@ import type {
 
 declare global {
   interface Window {
-    typist?: {
+    glyph?: {
       openDialog: (
         kind: "file" | "directory",
       ) => Promise<FileOpenResult | null>;

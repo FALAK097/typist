@@ -1,10 +1,10 @@
-# Typist PRD
+# Glyph PRD
 
 Source of truth for scope, architecture, and delivery status.
 
 ## Product
 
-Typist is a markdown product with two apps:
+Glyph is a markdown product with two apps:
 
 - `apps/desktop`: Electron app for local markdown viewing and editing
 - `apps/web`: landing/download site for distribution
@@ -62,7 +62,7 @@ Planned later:
 ## Repo Shape
 
 ```text
-typist/
+glyph/
 ├── apps/
 │   ├── desktop/
 │   └── web/
@@ -78,7 +78,7 @@ Shipped now:
 
 - desktop/web monorepo split
 - Electron desktop shell with preload IPC
-- default workspace rooted at `Documents/Typist`
+- default workspace rooted at `Documents/Glyph`
 - desktop file open and folder open
 - recursive notes sidebar
 - recent files in sidebar
@@ -126,7 +126,7 @@ Not started:
 
 - [X] Electron shell and preload bridge
 - [X] React desktop renderer
-- [X] Default `Documents/Typist` workspace
+- [X] Default `Documents/Glyph` workspace
 - [X] Open markdown file
 - [X] Open markdown folder
 - [X] Recursive sidebar explorer

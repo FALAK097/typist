@@ -60,21 +60,16 @@ export const FileDownIcon = (props: IconProps) => <HugeIcon icon={FileDownSvg} {
 export const CheckCircleIcon = (props: IconProps) => <HugeIcon icon={CheckmarkCircle01Svg} {...props} />;
 export const XIcon = (props: IconProps) => <HugeIcon icon={Cancel01Svg} {...props} />;
 
-export const TypistLogoMark = ({ size = 128, className }: IconProps) => {
+export const GlyphLogoMark = ({ size = 128, className }: IconProps) => {
   return (
-    <svg
-      viewBox="0 0 128 128"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
+    <img
+      src="/icon.png"
+      alt="Glyph Logo"
       width={size}
       height={size}
       aria-hidden="true"
-      focusable="false"
       className={className}
-    >
-      <rect width="128" height="128" rx="36" fill="currentColor" />
-      <path d="M38 38H90" stroke="var(--background)" strokeWidth="12" strokeLinecap="round" />
-      <path d="M64 38V90" stroke="var(--background)" strokeWidth="12" strokeLinecap="round" />
-    </svg>
+      style={{ borderRadius: size / 4 }}
+    />
   );
 };

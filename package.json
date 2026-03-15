@@ -1,16 +1,16 @@
 {
-  "name": "typist",
+  "name": "glyph",
   "private": true,
   "version": "0.1.0",
   "packageManager": "pnpm@10.26.0",
   "scripts": {
-    "dev:desktop": "pnpm --filter @typist/desktop dev",
-    "dev:web": "pnpm --filter @typist/web dev",
+    "dev:desktop": "pnpm --filter @glyph/desktop dev",
+    "dev:web": "pnpm --filter @glyph/web dev",
     "build": "pnpm -r build",
-    "build:desktop": "pnpm --filter @typist/desktop build",
-    "build:web": "pnpm --filter @typist/web build",
+    "build:desktop": "pnpm --filter @glyph/desktop build",
+    "build:web": "pnpm --filter @glyph/web build",
     "typecheck": "pnpm -r typecheck",
-    "typecheck:desktop": "pnpm --filter @typist/desktop typecheck",
-    "typecheck:web": "pnpm --filter @typist/web typecheck"
+    "typecheck:desktop": "pnpm --filter @glyph/desktop typecheck",
+    "typecheck:web": "pnpm --filter @glyph/web typecheck"
   }
 }

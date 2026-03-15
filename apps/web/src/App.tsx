@@ -77,17 +77,13 @@ export function App() {
       
       <header className="landing-header">
         <div className="landing-logo">
-          <svg viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="128" height="128" rx="36" fill="currentColor" className="logo-bg"/>
-            <path d="M38 38H90" stroke="var(--background)" strokeWidth="12" strokeLinecap="round"/>
-            <path d="M64 38V90" stroke="var(--background)" strokeWidth="12" strokeLinecap="round"/>
-          </svg>
-          <span>Typist</span>
+          <img src="/icon.png" alt="Glyph Logo" width="32" height="32" className="logo-bg rounded-lg" />
+          <span>Glyph</span>
         </div>
         
         <nav className="landing-nav">
           <a 
-            href="https://github.com/FALAK097/typist" 
+            href="https://github.com/FALAK097/glyph" 
             className="landing-github"
             target="_blank"
             rel="noopener noreferrer"
@@ -113,11 +109,11 @@ export function App() {
         </p>
         
         <div className="landing-actions">
-          <a className="landing-button landing-button-primary" href="/downloads/typist-macos.dmg">
+          <a className="landing-button landing-button-primary" href="/downloads/glyph-macos.dmg">
             <AppleIcon />
             Download for macOS
           </a>
-          <a className="landing-button landing-button-secondary" href="/downloads/typist-windows.exe">
+          <a className="landing-button landing-button-secondary" href="/downloads/glyph-windows.exe">
             <WindowsIcon />
             Download for Windows
           </a>

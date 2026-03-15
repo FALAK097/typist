@@ -22,7 +22,7 @@ import { flattenFiles } from "@/lib/workspace-tree";
 
 import type { CommandPaletteItem } from "@/types/command-palette";
 
-export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) => {
+export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => {
   const {
     rootPath,
     tree,
@@ -81,9 +81,9 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
   }), [expandedFolderPaths, sidebarNodes]);
 
   const restoreSidebarNodes = useCallback(async (items: SidebarItemSetting[]) => {
-    const resolved = await Promise.all(items.map((item) => typist.getSidebarNode(item.kind, item.path)));
+    const resolved = await Promise.all(items.map((item) => glyph.getSidebarNode(item.kind, item.path)));
     return resolved.filter((node): node is DirectoryNode => node !== null);
-  }, [typist]);
+  }, [glyph]);
 
   const syncWorkspace = useCallback((workspace: WorkspaceSnapshot) => {
     setWorkspace(workspace);
@@ -95,24 +95,24 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
     setActiveFile(file);
     setIsWorkspaceMode(isFileInsideWorkspace(file.path, rootPath));
     setSidebarNodes((prev) => upsertSidebarFile(prev, file));
-    const nextSettings = await typist.getSettings();
+    const nextSettings = await glyph.getSettings();
     setSettings(nextSettings);
     setIsPaletteOpen(false);
-  }, [rootPath, setActiveFile, typist]);
+  }, [rootPath, setActiveFile, glyph]);
 
   useEffect(() => {
     const boot = async () => {
-      const nextSettings = await typist.getSettings();
+      const nextSettings = await glyph.getSettings();
       setSettings(nextSettings);
       applyTheme(nextSettings.themeMode);
 
       let nextSidebarNodes = orderSidebarNodes(await restoreSidebarNodes(nextSettings.sidebar.items), nextSettings.sidebar.items);
       const nextExpandedFolders = new Set(nextSettings.sidebar.expandedFolders);
 
-      const target = await typist.getPendingExternalPath();
+      const target = await glyph.getPendingExternalPath();
       if (target) {
         if (target.isDirectory) {
-          const workspace = await typist.openFolder(target.path);
+          const workspace = await glyph.openFolder(target.path);
           if (workspace) {
             setWorkspace(workspace);
             setIsWorkspaceMode(true);
@@ -120,19 +120,19 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
             nextExpandedFolders.add(workspace.rootPath);
           }
         } else {
-          const workspace = await typist.openDefaultWorkspace();
+          const workspace = await glyph.openDefaultWorkspace();
           if (workspace) {
             setWorkspace(workspace);
             nextSidebarNodes = upsertSidebarFolder(nextSidebarNodes, workspace);
             nextExpandedFolders.add(workspace.rootPath);
           }
-          const file = await typist.readFile(target.path);
+          const file = await glyph.readFile(target.path);
           setActiveFile(file);
           setIsWorkspaceMode(Boolean(workspace && isFileInsideWorkspace(file.path, workspace.rootPath)));
           nextSidebarNodes = upsertSidebarFile(nextSidebarNodes, file);
         }
       } else {
-        const workspace = await typist.openDefaultWorkspace();
+        const workspace = await glyph.openDefaultWorkspace();
         if (workspace) {
           setWorkspace(workspace);
           setIsWorkspaceMode(true);
@@ -147,34 +147,34 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
     };
 
     void boot();
-  }, [restoreSidebarNodes, setActiveFile, setWorkspace, typist]);
+  }, [restoreSidebarNodes, setActiveFile, setWorkspace, glyph]);
 
   useEffect(() => {
-    return typist.onExternalFile(async (target) => {
+    return glyph.onExternalFile(async (target) => {
       if (target.isDirectory) {
-        const workspace = await typist.openFolder(target.path);
+        const workspace = await glyph.openFolder(target.path);
         if (workspace) {
           syncWorkspace(workspace);
           setIsWorkspaceMode(true);
         }
       } else {
-        const file = await typist.readFile(target.path);
+        const file = await glyph.readFile(target.path);
         await syncOpenedFile(file);
       }
     });
-  }, [syncOpenedFile, syncWorkspace, typist]);
+  }, [syncOpenedFile, syncWorkspace, glyph]);
 
   useEffect(() => {
-    return typist.onWorkspaceChanged(async ({ rootPath: changedRootPath, tree: nextTree, changedPath }) => {
+    return glyph.onWorkspaceChanged(async ({ rootPath: changedRootPath, tree: nextTree, changedPath }) => {
       setTree(nextTree);
       setSidebarNodes((prev) => upsertSidebarFolder(prev, { rootPath: changedRootPath, tree: nextTree, activeFile: null }));
 
       if (changedPath === activeFile?.path && !isDirty) {
-        const refreshedFile = await typist.readFile(changedPath);
+        const refreshedFile = await glyph.readFile(changedPath);
         updateActiveFile(refreshedFile);
       }
     });
-  }, [activeFile?.path, isDirty, updateActiveFile, setTree, typist]);
+  }, [activeFile?.path, isDirty, updateActiveFile, setTree, glyph]);
 
   useEffect(() => {
     if (!activeFile || !isDirty || isSaving) {
@@ -193,14 +193,14 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
           const safeName = firstLine.replace(/[^a-zA-Z0-9-_\s]/g, "").trim().substring(0, 50);
           if (safeName && safeName !== "Untitled") {
             const newName = `${safeName}.md`;
-            finalFile = await typist.renameFile(currentPath, newName);
+            finalFile = await glyph.renameFile(currentPath, newName);
             setSidebarNodes((prev) => upsertSidebarFile(renameSidebarFile(prev, currentPath, finalFile), finalFile));
             currentPath = finalFile.path;
             updateActiveFile(finalFile);
           }
         }
 
-        const savedFile = await typist.saveFile(currentPath, draftContent);
+        const savedFile = await glyph.saveFile(currentPath, draftContent);
         markSaved(savedFile);
       } catch (saveError) {
         setSaving(false);
@@ -209,7 +209,7 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
     }, 800);
 
     return () => window.clearTimeout(timer);
-  }, [activeFile?.path, draftContent, isDirty, isSaving, markSaved, setError, setSaving, typist]);
+  }, [activeFile?.path, draftContent, isDirty, isSaving, markSaved, setError, setSaving, glyph]);
 
   useEffect(() => {
     if (!isPaletteOpen) {
@@ -225,12 +225,12 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
     }
 
     const timer = window.setTimeout(async () => {
-      const results = await typist.searchWorkspace(query);
+      const results = await glyph.searchWorkspace(query);
       setSearchResults(results);
     }, 120);
 
     return () => window.clearTimeout(timer);
-  }, [deferredPaletteQuery, isPaletteOpen, isWorkspaceMode, typist]);
+  }, [deferredPaletteQuery, isPaletteOpen, isWorkspaceMode, glyph]);
 
   useEffect(() => {
     if (!settings) {
@@ -241,10 +241,10 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
   }, [settings]);
 
   const saveSettings = useCallback(async (patch: Partial<AppSettings>) => {
-    const next = await typist.updateSettings(patch);
+    const next = await glyph.updateSettings(patch);
     setSettings(next);
     return next;
-  }, [typist]);
+  }, [glyph]);
 
   useEffect(() => {
     if (!settings || !hasHydratedSidebar) {
@@ -261,10 +261,10 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
   }, [hasHydratedSidebar, persistedSidebar, saveSettings, settings]);
 
   const openFile = useCallback(async (filePath: string) => {
-    const file = await typist.readFile(filePath);
+    const file = await glyph.readFile(filePath);
     await syncOpenedFile(file);
     pushHistory(filePath);
-  }, [syncOpenedFile, typist, pushHistory]);
+  }, [syncOpenedFile, glyph, pushHistory]);
 
   const createNote = useCallback(async () => {
     const baseDir = isWorkspaceMode ? rootPath : settings?.defaultWorkspacePath ?? null;
@@ -273,14 +273,14 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
       return;
     }
 
-    const file = await typist.createFile(baseDir, `Untitled-${Date.now()}.md`);
+    const file = await glyph.createFile(baseDir, `Untitled-${Date.now()}.md`);
     setActiveFile(file);
     setIsWorkspaceMode(true);
     setSidebarNodes((prev) => upsertSidebarFile(prev, file));
-    const nextSettings = await typist.getSettings();
+    const nextSettings = await glyph.getSettings();
     setSettings(nextSettings);
     setIsPaletteOpen(false);
-  }, [isWorkspaceMode, rootPath, setActiveFile, settings?.defaultWorkspacePath, typist]);
+  }, [isWorkspaceMode, rootPath, setActiveFile, settings?.defaultWorkspacePath, glyph]);
 
   const currentFileIndex = files.findIndex((item) => item.path === activeFile?.path);
 
@@ -296,22 +296,22 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
   const navigateBack = useCallback(async () => {
     const prevPath = goBack();
     if (prevPath) {
-      const file = await typist.readFile(prevPath);
+      const file = await glyph.readFile(prevPath);
       setActiveFile(file);
     }
-  }, [goBack, typist, setActiveFile]);
+  }, [goBack, glyph, setActiveFile]);
 
   const navigateForward = useCallback(async () => {
     const nextPath = goForward();
     if (nextPath) {
-      const file = await typist.readFile(nextPath);
+      const file = await glyph.readFile(nextPath);
       setActiveFile(file);
     }
-  }, [goForward, typist, setActiveFile]);
+  }, [goForward, glyph, setActiveFile]);
 
   const handleDeleteFile = useCallback(async (filePath: string) => {
     try {
-      await typist.deleteFile(filePath);
+      await glyph.deleteFile(filePath);
       setSidebarNodes((prev) => removeSidebarPath(prev, filePath));
 
       if (activeFile?.path === filePath) {
@@ -320,7 +320,7 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete file");
     }
-  }, [activeFile?.path, setActiveFile, setError, typist]);
+  }, [activeFile?.path, setActiveFile, setError, glyph]);
 
   const handleRenameFile = useCallback(async (filePath: string, newName: string) => {
     if (!newName.trim()) {
@@ -328,7 +328,7 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
     }
 
     try {
-      const renamedFile = await typist.renameFile(filePath, newName);
+      const renamedFile = await glyph.renameFile(filePath, newName);
       setSidebarNodes((prev) => upsertSidebarFile(renameSidebarFile(prev, filePath, renamedFile), renamedFile));
       if (activeFile?.path === filePath) {
         setActiveFile(renamedFile);
@@ -336,7 +336,7 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to rename file");
     }
-  }, [activeFile?.path, setActiveFile, setError, typist]);
+  }, [activeFile?.path, setActiveFile, setError, glyph]);
 
   const handleToggleFolder = useCallback((folderPath: string) => {
     setExpandedFolderPaths((prev) => (
@@ -371,7 +371,7 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
       section: "Actions",
       kind: "command",
       onSelect: async () => {
-        const file = await typist.openDocument();
+        const file = await glyph.openDocument();
         if (file) await syncOpenedFile(file);
         setIsPaletteOpen(false);
       }
@@ -384,7 +384,7 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
       section: "Actions",
       kind: "command",
       onSelect: async () => {
-        const workspace = await typist.openFolder();
+        const workspace = await glyph.openFolder();
         if (workspace) { syncWorkspace(workspace); setIsWorkspaceMode(true); }
         setIsPaletteOpen(false);
       }
@@ -458,7 +458,7 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
       kind: "command",
       onSelect: () => { void saveSettings({ themeMode: "system" }); setIsPaletteOpen(false); }
     }
-  ], [createNote, moveNote, navigateBack, navigateForward, saveSettings, shortcuts, syncOpenedFile, syncWorkspace, typist]);
+  ], [createNote, moveNote, navigateBack, navigateForward, saveSettings, shortcuts, syncOpenedFile, syncWorkspace, glyph]);
 
   // Stable deduplicated file list — only rebuilds when sidebarNodes or files change, never on query change
   const allSearchableFiles = useMemo(() => {
@@ -606,14 +606,14 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
               void createNote();
               break;
             case "open-file": {
-              const file = await typist.openDocument();
+              const file = await glyph.openDocument();
               if (file) {
                 await syncOpenedFile(file);
               }
               break;
             }
             case "open-folder": {
-              const workspace = await typist.openFolder();
+              const workspace = await glyph.openFolder();
               if (workspace) {
                 syncWorkspace(workspace);
                 setIsWorkspaceMode(true);
@@ -624,7 +624,7 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
               if (activeFile) {
                 setSaving(true);
                 try {
-                  const savedFile = await typist.saveFile(activeFile.path, draftContent);
+                  const savedFile = await glyph.saveFile(activeFile.path, draftContent);
                   markSaved(savedFile);
                 } catch (saveError) {
                   console.error("Manual save failed:", saveError);
@@ -660,10 +660,10 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [shortcuts, activeFile, draftContent, markSaved, setError, setSaving, typist, createNote, moveNote, syncOpenedFile, syncWorkspace, navigateBack, navigateForward]);
+  }, [shortcuts, activeFile, draftContent, markSaved, setError, setSaving, glyph, createNote, moveNote, syncOpenedFile, syncWorkspace, navigateBack, navigateForward]);
 
   useEffect(() => {
-    return typist.onCommand(async (command) => {
+    return glyph.onCommand(async (command) => {
       if (command === "quick-open") {
         setIsPaletteOpen(true);
         return;
@@ -680,7 +680,7 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
       }
 
       if (command === "open-file") {
-        const file = await typist.openDocument();
+        const file = await glyph.openDocument();
         if (file) {
           await syncOpenedFile(file);
         }
@@ -688,7 +688,7 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
       }
 
       if (command === "open-folder") {
-        const workspace = await typist.openFolder();
+        const workspace = await glyph.openFolder();
         if (workspace) {
           syncWorkspace(workspace);
           setIsWorkspaceMode(true);
@@ -699,7 +699,7 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
       if (command === "save" && activeFile) {
         setSaving(true);
         try {
-          const savedFile = await typist.saveFile(activeFile.path, draftContent);
+          const savedFile = await glyph.saveFile(activeFile.path, draftContent);
           markSaved(savedFile);
         } catch (saveError) {
           console.error("Menu save failed:", saveError);
@@ -709,7 +709,7 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
         }
       }
     });
-  }, [activeFile, createNote, draftContent, markSaved, setError, setSaving, syncOpenedFile, syncWorkspace, typist]);
+  }, [activeFile, createNote, draftContent, markSaved, setError, setSaving, syncOpenedFile, syncWorkspace, glyph]);
 
   const saveStateLabel = isSaving
     ? "Saving..."
@@ -720,18 +720,18 @@ export const useDesktopAppController = (typist: NonNullable<Window["typist"]>) =
         : "Ready";
 
   const chooseFolderAndUpdateWorkspace = useCallback(async () => {
-    const selection = await typist.openDialog("directory");
+    const selection = await glyph.openDialog("directory");
     if (!selection) {
       return;
     }
 
     const nextSettings = await saveSettings({ defaultWorkspacePath: selection.path });
-    const workspace = await typist.openFolder(nextSettings.defaultWorkspacePath);
+    const workspace = await glyph.openFolder(nextSettings.defaultWorkspacePath);
     if (workspace) {
       syncWorkspace(workspace);
       setIsWorkspaceMode(true);
     }
-  }, [saveSettings, syncWorkspace, typist]);
+  }, [saveSettings, syncWorkspace, glyph]);
 
   const changeThemeMode = useCallback(async (mode: ThemeMode) => {
     await saveSettings({ themeMode: mode });
