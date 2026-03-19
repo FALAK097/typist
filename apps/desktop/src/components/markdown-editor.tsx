@@ -58,6 +58,7 @@ import type {
 } from "../types/markdown-editor";
 
 const LINK_IMAGE_PATTERN = /(!?)\[([^\]]+)\]\(([^)]+)\)$/;
+const MARKDOWN_FILE_SUFFIX_PATTERN = /\.(md|mdx|markdown)$/i;
 type EditorActionType = "insert-table" | "insert-link" | "insert-image";
 
 type EditorActionDetail = {
@@ -804,7 +805,7 @@ export const MarkdownEditor = ({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const markdown =
         (editor as any).storage.markdown.getMarkdown?.() || editor.getHTML();
-      const filename = fileName.replace(/\.(md|markdown)$/i, ".pdf");
+      const filename = fileName.replace(MARKDOWN_FILE_SUFFIX_PATTERN, ".pdf");
 
       if (window.glyph) {
         const absolutePath = await window.glyph.exportMarkdownToPDF(
@@ -918,11 +919,11 @@ export const MarkdownEditor = ({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span className="text-sm font-medium text-foreground truncate max-w-[180px]">
-                    {fileName.replace(/\.(md|markdown)$/i, "")}
+                    {fileName.replace(MARKDOWN_FILE_SUFFIX_PATTERN, "")}
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
-                  {fileName.replace(/\.(md|markdown)$/i, "")}
+                  {fileName.replace(MARKDOWN_FILE_SUFFIX_PATTERN, "")}
                 </TooltipContent>
               </Tooltip>
             </>

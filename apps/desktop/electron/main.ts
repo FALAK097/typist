@@ -56,9 +56,19 @@ let activeWorkspaceRoot: string | null = null;
 let searchableFilesCache: string[] = [];
 let settingsUpdatePromise: Promise<AppSettings> | null = null;
 let pendingExternalPath: string | null = null;
+const MARKDOWN_EXTENSIONS = [".md", ".mdx", ".markdown"] as const;
+
+function getMarkdownExtension(fileName: string) {
+  const normalizedFileName = fileName.toLowerCase();
+  return (
+    MARKDOWN_EXTENSIONS.find((extension) =>
+      normalizedFileName.endsWith(extension),
+    ) ?? null
+  );
+}
 
 function isMarkdownFile(fileName: string) {
-  return fileName.endsWith(".md") || fileName.endsWith(".markdown");
+  return getMarkdownExtension(fileName) !== null;
 }
 
 function getSettingsPath() {
@@ -89,8 +99,7 @@ function normalizePathForComparison(targetPath: string) {
 function isMarkdownReference(target: string) {
   const normalizedTarget = stripLocalLinkSuffix(target).toLowerCase();
   return (
-    normalizedTarget.endsWith(".md") ||
-    normalizedTarget.endsWith(".markdown") ||
+    MARKDOWN_EXTENSIONS.some((extension) => normalizedTarget.endsWith(extension)) ||
     (!path.extname(normalizedTarget) &&
       !normalizedTarget.includes(".") &&
       normalizedTarget.length > 0)
@@ -101,7 +110,9 @@ async function resolveExistingFilePath(targetPath: string) {
   const candidates = [targetPath];
 
   if (!path.extname(targetPath)) {
-    candidates.push(`${targetPath}.md`, `${targetPath}.markdown`);
+    candidates.push(
+      ...MARKDOWN_EXTENSIONS.map((extension) => `${targetPath}${extension}`),
+    );
   }
 
   for (const candidate of candidates) {
@@ -861,7 +872,7 @@ async function showOpenDialog(
     properties,
     filters:
       kind === "file"
-        ? [{ name: "Markdown", extensions: ["md", "markdown"] }]
+        ? [{ name: "Markdown", extensions: ["md", "mdx", "markdown"] }]
         : kind === "image"
           ? [{ name: "Images", extensions: ["png", "jpg", "jpeg", "gif", "webp", "svg", "avif"] }]
         : undefined,
@@ -1027,9 +1038,8 @@ ipcMain.handle(
   async (_event, parentDir: string, fileName: string) => {
     assertWithinWorkspace(parentDir);
     assertBasename(fileName);
-    const normalizedFileName = fileName.endsWith(".md")
-      ? fileName
-      : `${fileName}.md`;
+    const normalizedFileName =
+      getMarkdownExtension(fileName) !== null ? fileName : `${fileName}.md`;
     const targetPath = path.join(parentDir, normalizedFileName);
     await fs.writeFile(targetPath, "", { flag: "wx" });
     return readMarkdownFile(targetPath, true);
@@ -1041,9 +1051,11 @@ ipcMain.handle(
   async (_event, oldPath: string, newName: string) => {
     assertWithinWorkspace(oldPath);
     assertBasename(newName);
-    const hasMarkdownExt =
-      newName.endsWith(".md") || newName.endsWith(".markdown");
-    const normalizedFileName = hasMarkdownExt ? newName : `${newName}.md`;
+    const currentExtension = getMarkdownExtension(oldPath) ?? ".md";
+    const normalizedFileName =
+      getMarkdownExtension(newName) !== null
+        ? newName
+        : `${newName}${currentExtension}`;
     const newPath = path.join(path.dirname(oldPath), normalizedFileName);
     await fs.rename(oldPath, newPath);
     return readMarkdownFile(newPath, true);

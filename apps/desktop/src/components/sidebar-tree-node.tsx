@@ -8,6 +8,8 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 import { ChevronRightIcon, FileIcon, FolderIcon, MoreVerticalIcon, PencilIcon, TrashIcon } from "./icons";
 import type { DragPosition, SidebarTreeNodeMenuCoords, SidebarTreeNodeProps } from "../types/sidebar";
 
+const MARKDOWN_FILE_SUFFIX_PATTERN = /\.(md|mdx|markdown)$/i;
+
 export const SidebarTreeNode = ({
   node,
   activePath,
@@ -51,7 +53,7 @@ export const SidebarTreeNode = ({
     }
 
     const currentName = node.name;
-    const baseName = currentName.replace(/\.(md|markdown)$/i, "");
+    const baseName = currentName.replace(MARKDOWN_FILE_SUFFIX_PATTERN, "");
 
     if (trimmed !== currentName && trimmed !== baseName) {
       onRenameFile(node.path, trimmed);
@@ -232,7 +234,7 @@ export const SidebarTreeNode = ({
                 className="h-auto w-full justify-start gap-2 rounded-none px-3 py-1.5 text-sm"
                 onClick={(event) => {
                   event.stopPropagation();
-                  setRenameValue(node.name.replace(/\.(md|markdown)$/i, ""));
+                  setRenameValue(node.name.replace(MARKDOWN_FILE_SUFFIX_PATTERN, ""));
                   setIsRenaming(true);
                   setShowMenu(false);
                 }}

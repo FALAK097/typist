@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Glyph - A minimal markdown viewer and editor for macOS and Windows. Browse local notes, edit markdown fast, and read rendered documents in a focused desktop workspace." />
     <meta name="author" content="Falak Gala" />
-    <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f8f5ee" />
     <meta name="application-name" content="Glyph" />
     <meta name="apple-mobile-web-app-title" content="Glyph" />
     <meta property="og:title" content="Glyph - Markdown, without the bloat" />
@@ -19,32 +18,12 @@
     <title>Glyph - Markdown, without the bloat</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap" rel="stylesheet">
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="icon" href="/favicon.ico" />
     <link rel="canonical" href="https://glyph.app" />
-    <style>
-      html { background-color: #fafafa; }
-      html.dark { background-color: #000000; }
-      body { background-color: #fafafa; }
-      html.dark body { background-color: #000000; }
-    </style>
-    <script>
-      (() => {
-        try {
-          const stored = localStorage.getItem("glyph.theme");
-          const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-          const isDark = stored === "dark" || (stored !== "light" && systemPrefersDark);
-          if (isDark) {
-            document.documentElement.classList.add("dark");
-          }
-        } catch {
-          // Ignore errors accessing localStorage.
-        }
-      })();
-    </script>
   </head>
   <body>
     <div id="root"></div>
