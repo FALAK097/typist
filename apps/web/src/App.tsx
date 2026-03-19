@@ -93,8 +93,20 @@ export function App() {
       
       <header className="landing-header">
         <div className="landing-logo">
-          <img src="/icon.png" alt="Glyph Logo" width="32" height="32" className="logo-bg rounded-lg" />
-          <span>Glyph</span>
+          <img
+            src="/logo-wordmark-dark.png"
+            alt="Glyph"
+            width="112"
+            height="69"
+            className="landing-wordmark landing-wordmark-dark"
+          />
+          <img
+            src="/logo-wordmark-light.png"
+            alt="Glyph"
+            width="112"
+            height="69"
+            className="landing-wordmark landing-wordmark-light"
+          />
         </div>
         
         <nav className="landing-nav">

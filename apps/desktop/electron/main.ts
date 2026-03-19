@@ -1,4 +1,14 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, net, protocol, shell } from "electron";
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  Menu,
+  nativeImage,
+  net,
+  protocol,
+  shell,
+} from "electron";
 import { watch } from "chokidar";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -26,14 +36,19 @@ const __dirname = path.dirname(__filename);
 const isDev = !app.isPackaged;
 const devServerUrl = "http://127.0.0.1:5173";
 const localAssetProtocol = "glyph-local";
+const APP_NAME = "Glyph";
 
 // Set app name early
-app.setName("Glyph");
+app.setName(APP_NAME);
 app.setAppUserModelId("com.glyph.app");
 
-const iconPath = isDev
-  ? path.join(__dirname, "../public/icon-128x128.svg")
-  : path.join(__dirname, "../public/icon-128x128.svg");
+const iconFileName =
+  process.platform === "win32"
+    ? "icon.ico"
+    : process.platform === "darwin"
+      ? "icon.icns"
+      : "icon.png";
+const iconPath = path.join(__dirname, "../public", iconFileName);
 
 let mainWindow: BrowserWindow | null = null;
 let activeWatcher: ReturnType<typeof watch> | null = null;
@@ -284,7 +299,7 @@ function buildApplicationMenu(shortcuts: AppSettings["shortcuts"]) {
     return keys ? toElectronAccelerator(keys) : undefined;
   };
 
-  return Menu.buildFromTemplate([
+  const menuTemplate: Electron.MenuItemConstructorOptions[] = [
     {
       label: "File",
       submenu: [
@@ -363,7 +378,26 @@ function buildApplicationMenu(shortcuts: AppSettings["shortcuts"]) {
       label: "View",
       submenu: [{ role: "reload" }, { role: "toggleDevTools" }],
     },
-  ]);
+  ];
+
+  if (process.platform === "darwin") {
+    menuTemplate.unshift({
+      label: APP_NAME,
+      submenu: [
+        { role: "about" },
+        { type: "separator" },
+        { role: "services" },
+        { type: "separator" },
+        { role: "hide" },
+        { role: "hideOthers" },
+        { role: "unhide" },
+        { type: "separator" },
+        { role: "quit" },
+      ],
+    });
+  }
+
+  return Menu.buildFromTemplate(menuTemplate);
 }
 
 function refreshApplicationMenu(shortcuts: AppSettings["shortcuts"]) {
@@ -1219,6 +1253,12 @@ app.on("open-file", async (event, filePath) => {
 app
   .whenReady()
   .then(async () => {
+    app.setAboutPanelOptions({ applicationName: APP_NAME });
+
+    if (process.platform === "darwin" && app.dock) {
+      app.dock.setIcon(nativeImage.createFromPath(iconPath));
+    }
+
     protocol.handle(localAssetProtocol, (request) => {
       const target = new URL(request.url).searchParams.get("path");
       if (!target) {

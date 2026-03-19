@@ -104,13 +104,6 @@ Shipped now:
 - standalone web landing page
 - placeholder download buttons
 
-In progress:
-
-- [X] stronger markdown fidelity and richer inline shortcuts
-- [X] better file and folder creation UX
-- [X] better OS-level open-with integration
-- [ ] final editor interaction polish for link and media affordances
-
 ## Phase Plan
 
 ### Phase 0: Foundation
@@ -153,12 +146,12 @@ In progress:
 - [X] Local image file picking
 - [ ] Drag-and-drop image support
 - [X] Rich keyboard formatting shortcuts
-- [ ] Provide copy icon for code blocks
+- [X] Provide copy icon for code blocks
 - [ ] Provide copy icon for table
 - [X] Provide delete icon for images
 - [X] Open interlinked md files within editor
 - [ ] Highlight text
-- [ ] Scroll and cursor reset polish when jumping between linked docs
+- [X] Scroll and cursor reset polish when jumping between linked docs
 - [ ] TOC
 - [ ] Improve markdown task-list shortcut conversion (`- [ ]`, `- [x]`)
 

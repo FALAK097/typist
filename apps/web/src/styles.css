@@ -167,22 +167,25 @@ a {
 .landing-logo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  min-height: 2.5rem;
 }
 
-.landing-logo svg {
-  width: 32px;
-  height: 32px;
+.landing-wordmark {
+  display: block;
+  width: auto;
+  height: 2rem;
 }
 
-.landing-logo .logo-bg {
-  fill: var(--foreground);
+.landing-wordmark-light {
+  display: none;
 }
 
-.landing-logo span {
-  font-size: 1.25rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+.dark .landing-wordmark-dark {
+  display: none;
+}
+
+.dark .landing-wordmark-light {
+  display: block;
 }
 
 .landing-nav {
