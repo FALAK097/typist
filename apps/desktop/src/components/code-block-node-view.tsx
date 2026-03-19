@@ -1,15 +1,40 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NodeViewContent, NodeViewWrapper, type ReactNodeViewProps } from '@tiptap/react';
 
 import { CopyIcon, TickIcon } from '@/components/icons';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { SUPPORTED_LANGUAGES } from '@/types/code-block-node-view';
+
+const LANGUAGE_LABELS: Record<(typeof SUPPORTED_LANGUAGES)[number], string> = {
+  javascript: 'JavaScript',
+  typescript: 'TypeScript',
+  python: 'Python',
+  html: 'HTML',
+  css: 'CSS',
+  plaintext: 'Plain Text',
+  bash: 'Bash',
+  dockerfile: 'Dockerfile',
+  json: 'JSON',
+  yaml: 'YAML',
+  sql: 'SQL',
+  go: 'Go',
+  rust: 'Rust',
+  markdown: 'Markdown',
+};
 
 export const CodeBlockNodeView = (props: ReactNodeViewProps) => {
   const { node, updateAttributes, editor } = props;
   const codeRef = useRef<HTMLDivElement>(null);
   const copyResetTimeoutRef = useRef<number | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -19,10 +44,9 @@ export const CodeBlockNodeView = (props: ReactNodeViewProps) => {
     };
   }, []);
 
-  const handleLanguageChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    e.stopPropagation();
-    const language = e.target.value;
+  const handleLanguageChange = (language: string) => {
     updateAttributes({ language });
+    setIsLanguageMenuOpen(false);
   };
 
   const handleCopy = async () => {
@@ -56,7 +80,7 @@ export const CodeBlockNodeView = (props: ReactNodeViewProps) => {
   return (
     <NodeViewWrapper
       as="pre"
-      className="code-block-shell relative my-3 overflow-hidden rounded-xl border border-border/80 bg-muted/88 pt-12 text-foreground shadow-[0_1px_0_rgba(255,255,255,0.45)_inset] outline-none"
+      className="code-block-shell relative my-3 overflow-hidden rounded-xl border border-border/80 bg-muted/88 pt-14 text-foreground shadow-[0_1px_0_rgba(255,255,255,0.45)_inset] outline-none"
       data-testid="code-block"
     >
       <div className="code-block-toolbar absolute top-2 right-2 left-2 z-20 flex items-center justify-end gap-2">
@@ -80,26 +104,51 @@ export const CodeBlockNodeView = (props: ReactNodeViewProps) => {
             <CopyIcon size={15} />
           )}
         </button>
-        {isEditing ? (
-          <select
-            value={currentLanguage}
-            onChange={handleLanguageChange}
-            onMouseDown={(e) => e.stopPropagation()}
-            className="code-block-language-select h-8 min-w-[7.5rem] cursor-pointer appearance-none rounded-md border border-border/70 bg-background/92 px-3 pr-7 text-xs font-semibold tracking-[0.18em] text-foreground uppercase shadow-sm outline-none transition-[border-color,box-shadow,background-color] duration-100 ease-out focus:border-primary focus:ring-2 focus:ring-primary/20"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='currentColor' d='M2.5 4.5L5 7l2.5-2.5'/%3E%3C/svg%3E")`,
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: 'right 8px center',
-              backgroundSize: '10px',
-            }}
-          >
-            {SUPPORTED_LANGUAGES.map((lang) => (
-              <option key={lang} value={lang}>
-                {lang}
-              </option>
-            ))}
-          </select>
-        ) : null}
+        <div className="min-w-0">
+          {isEditing ? (
+            <DropdownMenu
+              modal={false}
+              open={isLanguageMenuOpen}
+              onOpenChange={setIsLanguageMenuOpen}
+            >
+              <DropdownMenuTrigger
+                type="button"
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                }}
+                className="inline-flex h-8 max-w-full items-center gap-2 rounded-md border border-border/70 bg-background/92 px-3 text-[11px] font-semibold tracking-[0.16em] text-foreground uppercase shadow-sm outline-none transition-[background-color,border-color,color,transform] duration-100 ease-out hover:cursor-pointer hover:border-border hover:bg-background focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 active:translate-y-px"
+                aria-label="Select code language"
+              >
+                <span className="truncate">{LANGUAGE_LABELS[currentLanguage as keyof typeof LANGUAGE_LABELS] ?? currentLanguage}</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                side="bottom"
+                sideOffset={8}
+                className="w-56 rounded-xl border border-border/70 bg-card/95 p-1.5 shadow-xl supports-backdrop-filter:backdrop-blur-xl"
+                onMouseDown={(event) => {
+                  event.stopPropagation();
+                }}
+              >
+                <DropdownMenuRadioGroup
+                  value={currentLanguage}
+                  onValueChange={handleLanguageChange}
+                >
+                  {SUPPORTED_LANGUAGES.map((lang) => (
+                    <DropdownMenuRadioItem
+                      key={lang}
+                      value={lang}
+                      className="cursor-pointer rounded-lg px-3 py-2 text-sm text-foreground data-[highlighted]:bg-accent/70"
+                    >
+                      {LANGUAGE_LABELS[lang]}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
+        </div>
       </div>
 
       <div ref={codeRef} className="hljs-content">

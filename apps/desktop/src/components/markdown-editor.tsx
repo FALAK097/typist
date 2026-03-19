@@ -446,7 +446,7 @@ export const MarkdownEditor = ({
       attributes: {
         class: [
           "tiptap-editor",
-          "mx-auto max-w-[800px] px-10 py-5 pb-20 text-[15px] leading-[1.7] text-foreground outline-none",
+          "mx-auto max-w-[800px] px-10 py-5 pb-32 text-[15px] leading-[1.7] text-foreground outline-none",
           "[&>p]:mb-4",
           "[&>ul]:mb-4 [&>ol]:mb-4 [&>blockquote]:mb-4 [&>hr]:my-8",
           "[&>pre]:mb-4 [&>pre]:rounded-lg [&>pre]:overflow-auto",
@@ -1170,7 +1170,7 @@ export const MarkdownEditor = ({
         ) : null}
         <EditorContent editor={editor} />
       </div>
-      <div className="absolute bottom-6 right-10 flex items-center gap-3 px-3 py-1.5 rounded-full bg-card/80 backdrop-blur-sm border border-border shadow-sm z-10 pointer-events-none">
+      <div className="absolute bottom-6 right-10 flex items-center gap-3 px-3 py-1.5 rounded-full bg-card/80 backdrop-blur-sm border border-border shadow-sm z-30 pointer-events-none">
         <div className="flex items-center gap-2 text-muted-foreground text-xs">
           <span>{wordCount} words</span>
           <span>{readingTime} min read</span>
