@@ -66,6 +66,7 @@ jobs:
 
       - name: Commit updated Homebrew cask
         run: |
+          git restore apps/desktop/package.json
           git fetch origin main
           git switch main
           git pull --rebase --autostash origin main
