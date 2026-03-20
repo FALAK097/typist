@@ -28,15 +28,33 @@ const WindowsIcon = () => (
   </svg>
 );
 
-const features = [
+type Feature = {
+  eyebrow: string;
+  title: string;
+  description: string;
+  className: string;
+  tone: string;
+  image?: {
+    src: string;
+    alt: string;
+    frame?: "wide" | "compact";
+  };
+  themes?: boolean;
+};
+
+const features: Feature[] = [
   {
     eyebrow: "Organization",
     title: "Folders + Editing",
     description:
       "Open entire directories and manage your markdown library in one focused editor designed for long-form writing.",
     className: "md:col-span-8",
-    tone: "bg-[#efeee9]",
-    media: true,
+    tone: "feature-card--paper",
+    image: {
+      src: "/demo.png",
+      alt: "Glyph interface preview",
+      frame: "wide",
+    },
   },
   {
     eyebrow: "Privacy",
@@ -44,7 +62,7 @@ const features = [
     description:
       "Your notes stay on your device. No accounts, no forced sync, and no cloud dependency between you and your files.",
     className: "md:col-span-4",
-    tone: "bg-[#4b4b4b] text-[#faf9f5]",
+    tone: "feature-card--ink",
   },
   {
     eyebrow: "Native",
@@ -52,14 +70,14 @@ const features = [
     description:
       "Preview markdown files right in Finder. Press Space on any .md file and read instantly.",
     className: "md:col-span-4",
-    tone: "bg-[#efeee9]",
+    tone: "feature-card--paper",
   },
   {
     eyebrow: "Discovery",
     title: "Search Everything",
     description: "Search all your markdown files in one place and find the exact note you need in seconds.",
     className: "md:col-span-4",
-    tone: "border border-black/10 bg-white shadow-[0_20px_60px_-48px_rgba(0,0,0,0.45)]",
+    tone: "feature-card--white",
   },
   {
     eyebrow: "Ethics",
@@ -67,7 +85,7 @@ const features = [
     description:
       "Glyph is transparent and community-friendly. Inspect the code, contribute improvements, or adapt it to your workflow.",
     className: "md:col-span-4",
-    tone: "bg-[#e6e5e3]",
+    tone: "feature-card--tint",
   },
   {
     eyebrow: "Workflow",
@@ -75,10 +93,11 @@ const features = [
     description:
       "Built for speed, with fast navigation and commands that keep your hands on the keyboard.",
     className: "md:col-span-5",
-    tone: "bg-[#efeee9]",
+    tone: "feature-card--paper",
     image: {
       src: "/keyboard-shortcut.png",
       alt: "Glyph keyboard shortcuts interface preview",
+      frame: "compact",
     },
   },
   {
@@ -87,10 +106,11 @@ const features = [
     description:
       "Readable markdown structure and code blocks make it easier to scan, edit, and stay oriented while writing.",
     className: "md:col-span-7",
-    tone: "border border-black/10 bg-white shadow-[0_20px_60px_-48px_rgba(0,0,0,0.45)]",
+    tone: "feature-card--white",
     image: {
       src: "/syntax-highlighting.png",
       alt: "Glyph syntax highlighting preview",
+      frame: "compact",
     },
   },
   {
@@ -99,49 +119,52 @@ const features = [
     description:
       "Carefully tuned themes for every lighting condition, whether you are writing in daylight or reviewing notes late at night.",
     className: "md:col-span-12",
-    tone: "bg-[#efeee9]",
+    tone: "feature-card--paper",
     themes: true,
   },
 ];
 
+type ProductShotProps = {
+  src: string;
+  alt: string;
+  frame?: "wide" | "compact";
+};
+
+function ProductShot({ src, alt, frame = "compact" }: ProductShotProps) {
+  return (
+    <div className={`product-shot ${frame === "wide" ? "product-shot--wide" : ""}`}>
+      <img src={src} alt={alt} width="2880" height="1800" className="product-shot__image" />
+    </div>
+  );
+}
+
 export function App() {
   return (
-    <main className="min-h-screen bg-[#fbfaf6] text-[#2f342e] [font-family:'Manrope',ui-sans-serif,sans-serif]">
+    <main className="min-h-screen bg-[var(--surface-page)] text-[var(--ink-strong)] [font-family:var(--font-sans)]">
       <a
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-[#2f342e] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-[#fbfaf6]"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-[var(--ink-strong)] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-[var(--surface-page)]"
         href="#main-content"
       >
         Skip to content
       </a>
 
-      <nav className="sticky top-0 z-40 bg-transparent">
-        <div className="mx-auto flex max-w-screen-2xl flex-wrap items-center justify-between gap-4 px-6 py-5 sm:px-8 lg:px-12">
+      <nav className="sticky top-0 z-40 border-b border-black/5 bg-[color:color-mix(in_oklab,var(--surface-page)_88%,white)]/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-screen-2xl flex-wrap items-center justify-between gap-4 px-6 py-4 sm:px-8 lg:px-12">
           <a
             href="/"
             aria-label="Glyph Home"
-            className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/30 focus-visible:ring-offset-4 focus-visible:ring-offset-[#fbfaf6]"
+            className="brand-lockup rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--surface-page)]"
           >
-            <img
-              src="/logo-wordmark-dark.png"
-              alt="Glyph"
-              width="510"
-              height="314"
-              className="h-14 w-auto sm:h-16"
-            />
+            <img src="/icon.png" alt="" width="238" height="218" className="brand-lockup__mark" />
+            <span className="brand-lockup__type">Glyph</span>
           </a>
 
-          <div className="flex w-full items-center justify-center gap-2 sm:w-auto">
-            <a
-              href="/downloads/glyph-macos.dmg"
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#2f342e] px-5 py-2.5 text-sm font-semibold text-[#faf9f5] shadow-[0_20px_45px_-28px_rgba(0,0,0,0.55)] transition-colors duration-150 ease-out hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/30 focus-visible:ring-offset-4 focus-visible:ring-offset-[#fbfaf6]"
-            >
+          <div className="flex w-full items-center justify-center gap-2 sm:w-auto sm:justify-end">
+            <a href="/downloads/glyph-macos.dmg" className="download-button">
               <AppleIcon />
               Download for macOS
             </a>
-            <a
-              href="/downloads/glyph-windows.exe"
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-black/12 bg-white px-5 py-2.5 text-sm font-semibold text-[#2f342e] transition-colors duration-150 ease-out hover:bg-[#f5f3ee] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/30 focus-visible:ring-offset-4 focus-visible:ring-offset-[#fbfaf6]"
-            >
+            <a href="/downloads/glyph-windows.exe" className="download-button download-button--secondary">
               <WindowsIcon />
               Download for Windows
             </a>
@@ -149,135 +172,99 @@ export function App() {
         </div>
       </nav>
 
-      <header className="mx-auto max-w-screen-2xl px-6 pb-20 pt-18 sm:px-8 sm:pt-22 lg:px-12 lg:pb-24">
+      <header className="mx-auto max-w-screen-2xl px-6 pb-18 pt-16 sm:px-8 sm:pb-22 sm:pt-20 lg:px-12 lg:pb-24 lg:pt-24">
         <div className="mx-auto flex max-w-5xl flex-col items-center text-center">
-          <span className="block text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[#6b6b68]">
-            The Interface of Thought
-          </span>
-          <h1
-            id="main-content"
-            className="mt-6 max-w-[10ch] text-balance [font-family:'Newsreader',ui-serif,serif] text-6xl leading-[0.92] tracking-[-0.045em] text-[#1f211e] sm:text-7xl lg:text-[7rem]"
-          >
-            Designed for the <em className="italic">discerning</em> writer.
+          <span className="hero-kicker">The Interface of Thought</span>
+          <h1 id="main-content" className="hero-display mt-6 max-w-[10ch] text-balance">
+            Designed for
+            <span className="hero-display__break">the <em>discerning</em></span>
+            writer.
           </h1>
-          <p className="mt-8 max-w-2xl text-lg leading-9 text-[#5f5e5e] sm:text-xl">
-            Glyph strips away digital noise, leaving only your words, your folders,
-            and a reading experience built for clarity.
+          <p className="hero-body mt-7 max-w-2xl text-balance">
+            Glyph strips away digital noise, leaving only your words, your folders, and a
+            reading experience built for clarity.
           </p>
         </div>
       </header>
 
-      <section className="mx-auto max-w-screen-2xl px-6 pb-32 sm:px-8 lg:px-12">
+      <section className="mx-auto max-w-screen-2xl px-6 pb-28 sm:px-8 lg:px-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-12 md:auto-rows-[minmax(300px,_auto)]">
-          {features.map((feature) => (
-            <article
-              key={feature.title}
-              className={`${feature.className} ${feature.tone} flex flex-col justify-between p-8 sm:p-10 lg:p-12`}
-            >
-              <div className="max-w-md">
-                <span
-                  className={`block text-[0.68rem] font-semibold uppercase tracking-[0.22em] ${
-                    feature.title === "Local-First" ? "text-white/65" : "text-[#787c75]"
-                  }`}
-                >
-                  {feature.eyebrow}
-                </span>
-                <h2
-                  className={`mt-6 [font-family:'Newsreader',ui-serif,serif] text-4xl leading-tight tracking-[-0.035em] ${
-                    feature.title === "Local-First" ? "text-[#faf9f5]" : "text-[#2f342e]"
-                  } ${feature.title === "Search Everything" || feature.title === "Light & Dark Themes" ? "italic" : ""}`}
-                >
-                  {feature.title}
-                </h2>
-                <p
-                  className={`mt-4 text-sm leading-7 sm:text-[0.97rem] ${
-                    feature.title === "Local-First" ? "text-white/80" : "text-[#5f5e5e]"
-                  }`}
-                >
-                  {feature.description}
-                </p>
-              </div>
+          {features.map((feature) => {
+            const darkCard = feature.title === "Local-First";
 
-              {feature.media ? (
-                <div className="mt-12 overflow-hidden border border-black/8 bg-white shadow-[0_24px_70px_-48px_rgba(0,0,0,0.45)]">
-                  <img
-                    src="/demo.png"
-                    alt="Glyph interface preview"
-                    width="2880"
-                    height="1800"
-                    className="h-64 w-full object-cover object-top sm:h-72"
-                  />
+            return (
+              <article
+                key={feature.title}
+                className={`${feature.className} ${feature.tone} feature-card flex flex-col justify-between`}
+              >
+                <div className="max-w-md">
+                  <span className={`feature-card__eyebrow ${darkCard ? "feature-card__eyebrow--dark" : ""}`}>
+                    {feature.eyebrow}
+                  </span>
+                  <h2 className={`feature-card__title ${darkCard ? "feature-card__title--dark" : ""}`}>
+                    {feature.title}
+                  </h2>
+                  <p className={`feature-card__description ${darkCard ? "feature-card__description--dark" : ""}`}>
+                    {feature.title === "Open Source" ? (
+                      <>
+                        <a
+                          href="https://github.com/FALAK097/glyph"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="footer-link"
+                        >
+                          Glyph
+                        </a>{" "}
+                        is transparent and community-friendly. Inspect the code, contribute
+                        improvements, or adapt it to your workflow.
+                      </>
+                    ) : (
+                      feature.description
+                    )}
+                  </p>
                 </div>
-              ) : null}
 
-              {feature.image ? (
-                <div
-                  className={`mt-10 overflow-hidden border border-black/8 bg-white shadow-sm ${
-                    feature.title === "Keyboard Shortcuts"
-                      ? "mx-auto max-w-[34rem]"
-                      : "mx-auto max-w-[38rem]"
-                  }`}
-                >
-                  <img
-                    src={feature.image.src}
-                    alt={feature.image.alt}
-                    width="2880"
-                    height="1800"
-                    className={`w-full object-cover ${
-                      feature.title === "Keyboard Shortcuts"
-                        ? "h-56 object-top sm:h-60"
-                        : "h-56 object-center sm:h-60"
-                    }`}
-                  />
-                </div>
-              ) : null}
-
-              {feature.themes ? (
-                <div className="mt-12 grid gap-4 sm:grid-cols-2">
-                  <div className="overflow-hidden border border-black/8 bg-white shadow-[0_24px_70px_-48px_rgba(0,0,0,0.45)]">
-                    <img
-                      src="/light-theme.png"
-                      alt="Glyph light theme preview"
-                      width="2880"
-                      height="1800"
-                      className="h-64 w-full object-cover object-top"
+                {feature.image ? (
+                  <div className="mt-10">
+                    <ProductShot
+                      src={feature.image.src}
+                      alt={feature.image.alt}
+                      frame={feature.image.frame}
                     />
                   </div>
-                  <div className="overflow-hidden border border-black/8 bg-white shadow-[0_24px_70px_-48px_rgba(0,0,0,0.45)]">
-                    <img
-                      src="/dark-theme.png"
-                      alt="Glyph dark theme preview"
-                      width="2880"
-                      height="1800"
-                      className="h-64 w-full object-cover object-top"
-                    />
+                ) : null}
+
+                {feature.themes ? (
+                  <div className="mt-12 grid gap-5 sm:grid-cols-2">
+                    <ProductShot src="/light-theme.png" alt="Glyph light theme preview" frame="wide" />
+                    <ProductShot src="/dark-theme.png" alt="Glyph dark theme preview" frame="wide" />
                   </div>
-                </div>
-              ) : null}
-            </article>
-          ))}
+                ) : null}
+              </article>
+            );
+          })}
         </div>
       </section>
 
-      <footer className="bg-[#fbfaf6]">
+      <footer className="bg-[var(--surface-page)]">
         <div className="mx-auto max-w-screen-2xl px-6 py-10 text-center sm:px-8 lg:px-12">
           <div className="mx-auto mb-8 h-px max-w-4xl bg-black/10" />
-          <p className="text-[0.78rem] font-medium tracking-[0.03em] text-[#5f5e5e]">
+          <p className="text-[0.8rem] font-medium tracking-[0.03em] text-[var(--ink-soft)]">
             Made by{" "}
             <a
               href="https://falakgala.dev"
               target="_blank"
               rel="noopener noreferrer"
-              className="transition-colors duration-150 ease-out hover:text-[#2f342e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/25 focus-visible:ring-offset-4 focus-visible:ring-offset-[#fbfaf6]"
+              className="footer-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--surface-page)]"
             >
               Falak Gala
             </a>
-            <span className="px-2">·</span>
+            <span className="px-2 text-black/25">·</span>
             <a
               href="https://github.com/FALAK097/glyph"
               target="_blank"
               rel="noopener noreferrer"
-              className="transition-colors duration-150 ease-out hover:text-[#2f342e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/25 focus-visible:ring-offset-4 focus-visible:ring-offset-[#fbfaf6]"
+              className="footer-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--surface-page)]"
             >
               GitHub
             </a>

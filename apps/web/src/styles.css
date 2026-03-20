@@ -1,1 +1,285 @@
 @import "tailwindcss";
+
+:root {
+  --surface-page: oklch(0.983 0.006 95);
+  --surface-paper: oklch(0.966 0.007 95);
+  --surface-tint: oklch(0.948 0.008 95);
+  --surface-strong: oklch(0.274 0.013 120);
+  --surface-card: oklch(0.996 0.002 95);
+  --border-soft: oklch(0.85 0.01 95 / 0.75);
+  --border-faint: oklch(0.78 0.012 95 / 0.28);
+  --ink-strong: oklch(0.236 0.011 110);
+  --ink-soft: oklch(0.48 0.01 105);
+  --ink-muted: oklch(0.57 0.009 105);
+  --ink-inverse: oklch(0.985 0.003 95);
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+  --font-sans: "Instrument Sans", "Manrope", ui-sans-serif, sans-serif;
+  --font-display: "Cormorant Garamond", "Newsreader", ui-serif, serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at top, oklch(1 0 0 / 0.72), transparent 38%),
+    linear-gradient(180deg, oklch(0.99 0.004 95), var(--surface-page) 20%, oklch(0.972 0.006 95));
+  color: var(--ink-strong);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: oklch(0.82 0.03 105 / 0.28);
+}
+
+.brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  color: var(--ink-strong);
+  text-decoration: none;
+}
+
+.brand-lockup__mark {
+  width: 1.9rem;
+  height: auto;
+  filter: drop-shadow(0 12px 22px oklch(0.5 0.08 290 / 0.12));
+}
+
+.brand-lockup__type {
+  font-family: var(--font-display);
+  font-size: clamp(1.55rem, 1.3rem + 0.8vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+
+.download-button {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  border-radius: 999px;
+  background: var(--surface-strong);
+  padding: 0.7rem 1.15rem;
+  color: var(--ink-inverse);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 18px 40px -28px oklch(0.14 0.01 110 / 0.55);
+  transition:
+    transform 160ms var(--ease-out-strong),
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.download-button--secondary {
+  border: 1px solid var(--border-faint);
+  background: color-mix(in oklab, white 92%, var(--surface-page));
+  color: var(--ink-strong);
+  box-shadow: none;
+}
+
+.hero-kicker {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.hero-display {
+  font-family: var(--font-display);
+  font-size: clamp(4.8rem, 8vw, 7.9rem);
+  font-weight: 500;
+  line-height: 0.88;
+  letter-spacing: -0.055em;
+  color: var(--ink-strong);
+}
+
+.hero-display__break {
+  display: block;
+}
+
+.hero-display em {
+  font-style: italic;
+  font-weight: 500;
+}
+
+.hero-body {
+  color: var(--ink-soft);
+  font-size: clamp(1.15rem, 1rem + 0.45vw, 1.6rem);
+  line-height: 1.8;
+}
+
+.feature-card {
+  padding: clamp(2rem, 1.55rem + 1.1vw, 3.2rem);
+  border-radius: 2rem;
+}
+
+.feature-card--paper {
+  background: var(--surface-paper);
+}
+
+.feature-card--tint {
+  background: var(--surface-tint);
+}
+
+.feature-card--white {
+  background: var(--surface-card);
+}
+
+.feature-card--ink {
+  background:
+    radial-gradient(circle at top right, oklch(0.34 0.015 110), transparent 45%),
+    var(--surface-strong);
+}
+
+.feature-card__eyebrow {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.feature-card__eyebrow--dark {
+  color: oklch(0.84 0.006 95 / 0.72);
+}
+
+.feature-card__title {
+  margin-top: 1.5rem;
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 2.2rem + 0.9vw, 3.8rem);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  color: var(--ink-strong);
+}
+
+.feature-card__title--dark {
+  color: var(--ink-inverse);
+}
+
+.feature-card__description {
+  margin-top: 1rem;
+  color: var(--ink-soft);
+  font-size: 0.98rem;
+  line-height: 1.9;
+}
+
+.feature-card__description--dark {
+  color: oklch(0.91 0.003 95 / 0.84);
+}
+
+.product-shot {
+  overflow: hidden;
+  margin-inline: auto;
+}
+
+.product-shot--wide {
+  max-width: 100%;
+}
+
+.product-shot__image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: contain;
+  object-position: center top;
+  border-radius: 1.6rem;
+}
+
+.product-shot:not(.product-shot--wide) {
+  max-width: 32rem;
+}
+
+.product-shot:not(.product-shot--wide) .product-shot__image {
+  aspect-ratio: 16 / 8.6;
+}
+
+.footer-link {
+  position: relative;
+  color: var(--ink-strong);
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.footer-link::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -0.12rem;
+  left: 0;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.42;
+  transform: scaleX(0.28);
+  transform-origin: left center;
+  transition:
+    transform 180ms var(--ease-out-strong),
+    opacity 180ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .download-button:hover {
+    transform: translateY(-1px);
+    background: oklch(0.22 0.011 110);
+  }
+
+  .download-button--secondary:hover {
+    background: color-mix(in oklab, var(--surface-page) 72%, white);
+    border-color: oklch(0.72 0.009 95 / 0.5);
+  }
+
+  .footer-link:hover::after {
+    opacity: 0.92;
+    transform: scaleX(1);
+  }
+}
+
+.download-button:active {
+  transform: scale(0.97);
+}
+
+@media (max-width: 640px) {
+  .brand-lockup__type {
+    font-size: 1.72rem;
+  }
+
+  .download-button {
+    padding-inline: 0.95rem;
+    font-size: 0.88rem;
+  }
+
+  .hero-display {
+    font-size: clamp(3.6rem, 17vw, 5.2rem);
+    line-height: 0.9;
+  }
+
+  .hero-body {
+    line-height: 1.65;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .download-button,
+  .footer-link,
+  .footer-link::after {
+    transition-duration: 0ms;
+  }
+}
