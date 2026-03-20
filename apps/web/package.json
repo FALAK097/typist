@@ -21,7 +21,7 @@
     "dev": "vite",
     "build": "vite build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "lint": "oxlint .",
+    "lint": "oxlint . --ignore-pattern 'dist/**'",
     "fmt": "oxfmt . '!dist/**'",
     "fmt:check": "oxfmt . '!dist/**' --check"
   },

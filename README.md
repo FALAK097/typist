@@ -23,7 +23,7 @@ It opens local markdown folders, lets you move quickly between notes, and keeps 
 - quick open and command palette with `Cmd/Ctrl+P`
 - global search and file search
 - theme switching and persisted settings
-- markdown link navigation between notes in the same workspace
+- Markdown link navigation between notes in the same workspace
 - slash actions for inserting tables, links, and images
 - local image picker flow
 - markdown export and PDF export

@@ -25,7 +25,7 @@
     "dist": "pnpm run build && electron-builder --publish never",
     "release": "pnpm run build && electron-builder --publish always",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p electron/tsconfig.json",
-    "lint": "oxlint .",
+    "lint": "oxlint . --ignore-pattern 'dist/**' --ignore-pattern 'dist-electron/**' --ignore-pattern 'release/**'",
     "fmt": "oxfmt . '!dist/**' '!dist-electron/**' '!release/**'",
     "fmt:check": "oxfmt . '!dist/**' '!dist-electron/**' '!release/**' --check"
   },

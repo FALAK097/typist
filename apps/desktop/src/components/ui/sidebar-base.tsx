@@ -42,7 +42,7 @@ const SidebarProvider = React.forwardRef<
       open: openProp,
       onOpenChange: setOpenProp,
       className,
-      style,
+      style: _style,
       children,
       ...props
     },
@@ -124,7 +124,7 @@ const Sidebar = React.forwardRef<
   (
     {
       side = "left",
-      variant = "sidebar",
+      variant: _variant = "sidebar",
       collapsible = "offcanvas",
       className,
       children,
@@ -307,7 +307,7 @@ const SidebarMenuButton = React.forwardRef<
     asChild?: boolean;
     isActive?: boolean;
   }
->(({ asChild = false, isActive = false, className, ...props }, ref) => {
+>(({ asChild: _asChild = false, isActive = false, className, ...props }, ref) => {
   return (
     <button
       ref={ref}
@@ -344,7 +344,7 @@ const SidebarMenuAction = React.forwardRef<
     asChild?: boolean;
     showOnHover?: boolean;
   }
->(({ className, asChild = false, showOnHover = false, ...props }, ref) => {
+>(({ className, asChild: _asChild = false, showOnHover = false, ...props }, ref) => {
   return (
     <button
       ref={ref}

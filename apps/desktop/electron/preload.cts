@@ -102,13 +102,13 @@ const api = {
     return invokeWithRetry<UpdateState>("app:getUpdateState");
   },
   checkForUpdates() {
-    return invokeWithRetry<UpdateState>("app:checkForUpdates");
+    return ipcRenderer.invoke("app:checkForUpdates") as Promise<UpdateState>;
   },
   downloadUpdate() {
-    return invokeWithRetry<UpdateState>("app:downloadUpdate");
+    return ipcRenderer.invoke("app:downloadUpdate") as Promise<UpdateState>;
   },
   installUpdate() {
-    return invokeWithRetry<void>("app:installUpdate");
+    return ipcRenderer.invoke("app:installUpdate") as Promise<void>;
   },
   onWorkspaceChanged(listener: (event: WorkspaceChangeEvent) => void) {
     const wrapped = (_event: Electron.IpcRendererEvent, payload: WorkspaceChangeEvent) => {

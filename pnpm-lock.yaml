@@ -9,10 +9,10 @@ importers:
   .:
     devDependencies:
       oxfmt:
-        specifier: ^0.41.0
+        specifier: 0.41.0
         version: 0.41.0
       oxlint:
-        specifier: ^1.14.0
+        specifier: 1.56.0
         version: 1.56.0
 
   apps/desktop:

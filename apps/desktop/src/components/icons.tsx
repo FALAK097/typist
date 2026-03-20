@@ -3,7 +3,6 @@ import {
   Add01Icon as Add01Svg,
   ArrowLeft01Icon as ArrowLeft01Svg,
   ArrowRight01Icon as ArrowRight01Svg,
-  ArrowRight02Icon as ArrowRight02Svg,
   ArrowUp01Icon as ArrowUp01Svg,
   ArrowDown01Icon as ArrowDown01Svg,
   Cancel01Icon as Cancel01Svg,
