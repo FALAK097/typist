@@ -1,15 +1,69 @@
 # Glyph
 
-Glyph is a workspace repo with:
+Glyph is a local-first markdown app with two surfaces:
 
-- `apps/desktop`: Electron markdown editor/viewer
-- `apps/web`: landing page and download surface
+- `apps/desktop`: the main Electron app for reading, editing, and organizing local markdown notes
+- `apps/web`: the landing page and download surface for releases
 
-The current source of truth for scope and progress is [prd.md](/Users/falakgala/projects/glyph/prd.md).
+## What Glyph Is
+
+Glyph is designed to be a fast, focused markdown workspace for people who want plain files, beautiful reading, and a lightweight writing flow without turning their notes into a database.
+
+It opens local markdown folders, lets you move quickly between notes, and keeps the experience local-first by default.
+
+## Current Features
+
+### Desktop app
+
+- local workspace rooted at `Documents/Glyph` by default
+- open markdown files and folders directly
+- recursive sidebar with nested folders and recent files
+- TipTap-based markdown editor with markdown-aware shortcuts
+- autosave and safe file refresh when files change externally
+- quick open and command palette with `Cmd/Ctrl+P`
+- global search and file search
+- theme switching and persisted settings
+- markdown link navigation between notes in the same workspace
+- slash actions for inserting tables, links, and images
+- local image picker flow
+- markdown export and PDF export
+- header update CTA when a packaged update is available
+- app version surfaced from runtime metadata
+
+### Web app
+
+- landing page for Glyph
+- release/download surface for desktop builds
+
+## Why It Exists
+
+Glyph aims to sit in the middle ground between plain-text tools and heavyweight note systems:
+
+- your notes stay as markdown files on disk
+- the UI is optimized for reading and fast navigation
+- editing stays powerful without burying the app in configuration
+- desktop distribution is built around GitHub Releases instead of a complex hosted backend
+
+## Install
+
+### macOS with Homebrew
+
+The Homebrew cask is kept in this repo and updated from the macOS release artifact:
+
+```bash
+brew install --cask FALAK097/glyph/glyph
+```
+
+### Direct downloads
+
+Desktop release artifacts are published through GitHub Releases:
+
+- macOS: `.dmg`
+- Windows: `.exe`
 
 ## Requirements
 
-- Node.js 20+ recommended
+- Node.js 20+
 - `pnpm` 10+
 
 ## Setup
@@ -20,29 +74,24 @@ From the repo root:
 pnpm install
 ```
 
-If Electron is ever missing after install, run:
+## Development
 
-```bash
-pnpm install
-```
-
-That workspace install also restores the Electron binary.
-
-## Run
-
-Desktop app:
+Run the desktop app:
 
 ```bash
 pnpm dev:desktop
 ```
 
-If the Electron window opens before the renderer is ready, restart once after pulling the latest changes. The desktop app now waits for the HTTP dev server and retries renderer boot in development.
-
-Web landing page:
+Run the web app:
 
 ```bash
 pnpm dev:web
 ```
+
+Notes:
+
+- the desktop dev flow waits for the Vite renderer before launching Electron
+- macOS dev startup uses a rebranded temporary `Glyph.app` so the dock/icon experience is closer to the packaged app
 
 ## Build
 
@@ -52,19 +101,25 @@ Build everything:
 pnpm build
 ```
 
-Build only desktop:
+Build desktop only:
 
 ```bash
 pnpm build:desktop
 ```
 
-Build only web:
+Build web only:
 
 ```bash
 pnpm build:web
 ```
 
-## Typecheck
+Create a local packaged desktop build:
+
+```bash
+pnpm dist:desktop
+```
+
+## Validation
 
 Typecheck everything:
 
@@ -72,17 +127,38 @@ Typecheck everything:
 pnpm typecheck
 ```
 
-Typecheck desktop only:
+Lint everything:
 
 ```bash
-pnpm typecheck:desktop
+pnpm lint
 ```
 
-Typecheck web only:
+Check formatting:
 
 ```bash
-pnpm typecheck:web
+pnpm fmt:check
 ```
+
+## Release Flow
+
+Glyph now has a release pipeline built around GitHub Actions, Release Please, `electron-builder`, and `electron-updater`.
+
+### Versioning and changelog
+
+- Release Please manages version bumps from commit history
+- the root [CHANGELOG.md](/Users/falakgala/projects/glyph/CHANGELOG.md) is generated and kept in sync with releases
+
+### Desktop releases
+
+- tagged releases build macOS and Windows artifacts
+- GitHub Releases is the publish target for desktop installers and updater metadata
+- packaged desktop builds can receive update state and show an update CTA inside the app header
+
+### Homebrew
+
+- the Homebrew cask lives in [Casks/glyph.rb](/Users/falakgala/projects/glyph/Casks/glyph.rb)
+- the generator script at [scripts/generate-homebrew-cask.mjs](/Users/falakgala/projects/glyph/scripts/generate-homebrew-cask.mjs) computes the SHA from the real macOS DMG
+- the release workflow updates the cask after tagged macOS releases
 
 ## Project Layout
 
@@ -91,37 +167,51 @@ glyph/
 ├── apps/
 │   ├── desktop/
 │   │   ├── electron/
+│   │   ├── public/
+│   │   ├── scripts/
 │   │   └── src/
 │   └── web/
 │       └── src/
+├── .github/workflows/
+├── Casks/
+├── scripts/
+├── CHANGELOG.md
 ├── package.json
 ├── pnpm-workspace.yaml
-├── prd.md
 └── README.md
 ```
 
-## Current Desktop Capabilities
+## Repository Scripts
 
-- default notes workspace in `Documents/Glyph`
-- open markdown files
-- open markdown folders
-- browse notes in a sidebar
-- see recently opened files in the sidebar
-- edit notes in a single-pane TipTap editor with markdown shortcuts
-- quick open with `Cmd/Ctrl+P`
-- search files, commands, and themes through the command palette
-- autosave
-- create new notes
-- switch and preview themes
-- change the default workspace folder from settings
+From the repo root:
 
-## Current Web Capabilities
+```bash
+pnpm dev:desktop
+pnpm dev:web
+pnpm build
+pnpm build:desktop
+pnpm build:web
+pnpm dist:desktop
+pnpm typecheck
+pnpm lint
+pnpm fmt:check
+pnpm cask:generate --version <version> --artifact-path apps/desktop/release/Glyph-<version>-mac.dmg
+```
 
-- landing page
-- placeholder download buttons for macOS and Windows
+## Status
 
-## Notes
+Already shipped:
 
-- Desktop packaging is not implemented yet, so the web download links are placeholders.
-- The desktop app now uses TipTap as the editor surface and saves markdown files, but markdown round-tripping still needs local UX validation and further polish.
-- I validated the repo with `pnpm typecheck`, `pnpm build`, and React Doctor, but I have not visually verified the running UI from this environment.
+- local markdown workspace flow
+- single-pane editor and reading experience
+- command palette, search, recent files, and themes
+- markdown/PDF export
+- release workflow, updater plumbing, and changelog automation
+
+Still planned:
+
+- drag-and-drop image support
+- TOC and more document-navigation polish
+- smarter ranking/history in the command palette
+- typography, motion, and bundle-size refinements
+- production deployment of the web landing page

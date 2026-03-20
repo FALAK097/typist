@@ -192,7 +192,6 @@ glyph/
 │   │       └── types/         # Third-party type augmentations (.d.ts)
 │   └── web/
 │       └── src/               # Landing page
-├── prd.md                     # Product requirements — primary source of truth
 └── pnpm-workspace.yaml
 ```
 
@@ -312,7 +311,7 @@ try {
 
 - `preload.cts` must remain CommonJS — Electron's sandbox requires it.
 - `apps/desktop/src/shared/` is framework-agnostic — no React imports.
-- `prd.md` is the product source of truth. Read it before architectural decisions.
+- `README.md` is the maintained product and workflow reference for this repo.
 - Context isolation and sandbox are **enabled** — never disable them.
 - The renderer has no Node.js/Electron access — all OS/file ops go through the `glyph` preload API.
 - All Electron work must reference `.agents/skills/electron/` for patterns, API signatures, and security best practices.
