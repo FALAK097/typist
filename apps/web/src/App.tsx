@@ -1,5 +1,5 @@
 import { Check, Copy } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const AppleIcon = () => (
   <svg
@@ -32,42 +32,14 @@ const WindowsIcon = () => (
 );
 
 const DOWNLOAD_URLS = {
-  latestReleaseApi: "https://api.github.com/repos/FALAK097/glyph/releases/latest",
+  mac: "https://github.com/FALAK097/glyph/releases/latest/download/Glyph-mac.dmg",
+  windows: "https://github.com/FALAK097/glyph/releases/latest/download/Glyph-windows.exe",
   releases: "https://github.com/FALAK097/glyph/releases",
   changelog: "https://github.com/FALAK097/glyph/blob/main/CHANGELOG.md",
   github: "https://github.com/FALAK097/glyph",
 } as const;
 
 const BREW_INSTALL_COMMAND = "brew install --cask FALAK097/glyph/glyph";
-
-type DownloadPlatform = "mac" | "windows";
-
-type GitHubReleaseAsset = {
-  name: string;
-  browser_download_url: string;
-};
-
-function isGitHubReleaseAsset(value: unknown): value is GitHubReleaseAsset {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  const asset = value as Record<string, unknown>;
-  return typeof asset.name === "string" && typeof asset.browser_download_url === "string";
-}
-
-function getReleaseAssets(release: unknown): GitHubReleaseAsset[] {
-  if (typeof release !== "object" || release === null) {
-    throw new Error("Unexpected latest release response");
-  }
-
-  const releasePayload = release as { assets?: unknown };
-  if (!Array.isArray(releasePayload.assets)) {
-    throw new Error("Latest release is missing assets");
-  }
-
-  return releasePayload.assets.filter(isGitHubReleaseAsset);
-}
 
 type Feature = {
   eyebrow: string;
@@ -190,7 +162,8 @@ function ProductShot({ src, alt, frame = "compact" }: ProductShotProps) {
 
 export function App() {
   const [hasCopiedBrew, setHasCopiedBrew] = useState(false);
-  const [resolvingPlatform, setResolvingPlatform] = useState<DownloadPlatform | null>(null);
+  const [brewCopyError, setBrewCopyError] = useState(false);
+  const brewFallbackInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!hasCopiedBrew) {
@@ -206,57 +179,48 @@ export function App() {
     };
   }, [hasCopiedBrew]);
 
+  useEffect(() => {
+    if (!brewCopyError) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const input = brewFallbackInputRef.current;
+      if (!input) {
+        return;
+      }
+
+      input.focus();
+      input.select();
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [brewCopyError]);
+
+  const selectBrewFallbackInput = () => {
+    const input = brewFallbackInputRef.current;
+    if (!input) {
+      return;
+    }
+
+    input.focus();
+    input.select();
+  };
+
   const handleCopyBrewCommand = async () => {
     try {
       await navigator.clipboard.writeText(BREW_INSTALL_COMMAND);
       setHasCopiedBrew(true);
+      setBrewCopyError(false);
     } catch (error) {
       console.error("Unable to copy Homebrew install command.", error);
       setHasCopiedBrew(false);
-    }
-  };
-
-  const resolveDownloadAsset = (
-    assets: GitHubReleaseAsset[],
-    platform: DownloadPlatform,
-  ): GitHubReleaseAsset | null => {
-    if (platform === "mac") {
-      return (
-        assets.find((asset) => asset.name === "Glyph-mac.dmg") ??
-        assets.find((asset) => asset.name.endsWith(".dmg")) ??
-        null
-      );
-    }
-
-    return (
-      assets.find((asset) => asset.name === "Glyph-windows.exe") ??
-      assets.find((asset) => asset.name.endsWith(".exe")) ??
-      null
-    );
-  };
-
-  const handleDownload = async (platform: DownloadPlatform) => {
-    setResolvingPlatform(platform);
-
-    try {
-      const response = await fetch(DOWNLOAD_URLS.latestReleaseApi);
-      if (!response.ok) {
-        throw new Error("Unable to resolve latest release");
-      }
-
-      const release = await response.json();
-      const asset = resolveDownloadAsset(getReleaseAssets(release), platform);
-
-      if (!asset) {
-        throw new Error("No matching asset found");
-      }
-
-      window.location.href = asset.browser_download_url;
-    } catch (error) {
-      console.error("Unable to resolve latest release download.", error);
-      window.location.href = DOWNLOAD_URLS.releases;
-    } finally {
-      setResolvingPlatform(null);
+      setBrewCopyError(true);
+      window.requestAnimationFrame(() => {
+        selectBrewFallbackInput();
+      });
     }
   };
 
@@ -286,24 +250,17 @@ export function App() {
           </a>
 
           <div className="flex w-full items-center justify-center gap-2 sm:w-auto sm:justify-end">
-            <button
-              type="button"
-              className="download-button cursor-pointer border-0"
-              onClick={() => void handleDownload("mac")}
-              disabled={resolvingPlatform !== null}
-            >
+            <a href={DOWNLOAD_URLS.mac} className="download-button cursor-pointer border-0">
               <AppleIcon />
-              {resolvingPlatform === "mac" ? "Preparing download..." : "Download for macOS"}
-            </button>
-            <button
-              type="button"
+              Download for macOS
+            </a>
+            <a
+              href={DOWNLOAD_URLS.windows}
               className="download-button download-button--secondary cursor-pointer border-0"
-              onClick={() => void handleDownload("windows")}
-              disabled={resolvingPlatform !== null}
             >
               <WindowsIcon />
-              {resolvingPlatform === "windows" ? "Preparing download..." : "Download for Windows"}
-            </button>
+              Download for Windows
+            </a>
           </div>
         </div>
       </nav>
@@ -349,6 +306,32 @@ export function App() {
                 )}
               </button>
             </div>
+            {brewCopyError ? (
+              <div className="border-t border-black/8 px-4 py-4">
+                <p className="text-[0.8rem] font-medium text-[var(--ink-soft)]">
+                  Copy failed. Click to select the command manually.
+                </p>
+                <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <input
+                    ref={brewFallbackInputRef}
+                    type="text"
+                    readOnly
+                    value={BREW_INSTALL_COMMAND}
+                    onClick={selectBrewFallbackInput}
+                    onFocus={selectBrewFallbackInput}
+                    className="min-w-0 flex-1 rounded-[0.7rem] border border-black/10 bg-white px-3 py-2 text-[0.88rem] text-[var(--ink-soft)] outline-none selection:bg-[var(--surface-strong)]/20"
+                    aria-label="Homebrew install command"
+                  />
+                  <button
+                    type="button"
+                    className="inline-flex shrink-0 cursor-pointer items-center justify-center rounded-[0.55rem] border border-black/8 bg-[color:color-mix(in_oklab,white_92%,var(--surface-page))] px-3 py-2 text-[0.8rem] font-semibold text-[var(--ink-soft)] transition-transform duration-150 ease-out hover:-translate-y-px hover:text-[var(--ink-strong)]"
+                    onClick={selectBrewFallbackInput}
+                  >
+                    Copy failed - Click to select
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       </header>
