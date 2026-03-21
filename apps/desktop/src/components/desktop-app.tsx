@@ -108,10 +108,14 @@ export const DesktopApp = ({ glyph }: DesktopAppProps) => {
         </main>
         <CommandPalette
           isOpen={controller.isPaletteOpen}
+          isSearching={controller.isSearchingContent}
           query={controller.paletteQuery}
+          scope={controller.paletteScope}
           items={controller.paletteItems}
           selectedIndex={controller.selectedIndex}
           onChangeQuery={controller.setPaletteQuery}
+          onChangeScope={controller.changePaletteScope}
+          onCycleScope={controller.cyclePaletteScopeSelection}
           onClose={() => {
             controller.setIsPaletteOpen(false);
           }}

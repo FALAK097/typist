@@ -1,4 +1,12 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import {
+  startTransition,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import type { BreadcrumbItem, NoteShortcutItem, OutlineItem } from "@/types/navigation";
 import type { DragPosition, SidebarTopLevelNode } from "@/types/sidebar";
@@ -18,9 +26,20 @@ import type {
 import { useWorkspaceStore } from "@/store/workspace";
 import { applyTheme } from "@/theme/themes";
 
+import {
+  cycleCommandPaletteScope,
+  parseCommandPaletteQuery,
+  scoreCommandPaletteMatch,
+} from "@/lib/command-palette";
 import { getErrorMessage } from "@/lib/errors";
 import { buildBreadcrumbs, extractMarkdownOutline } from "@/lib/note-navigation";
-import { isFileInsideWorkspace, isPathInside, isSamePath, normalizePath } from "@/lib/paths";
+import {
+  getDisplayFileName,
+  isFileInsideWorkspace,
+  isPathInside,
+  isSamePath,
+  normalizePath,
+} from "@/lib/paths";
 import { getFolderRevealLabel } from "@/lib/platform";
 import {
   orderSidebarNodes,
@@ -33,7 +52,19 @@ import {
 } from "@/lib/sidebar-tree";
 import { flattenFiles } from "@/lib/workspace-tree";
 
-import type { CommandPaletteItem } from "@/types/command-palette";
+import type { CommandPaletteItem, CommandPaletteScope } from "@/types/command-palette";
+
+function getPathKey(targetPath: string) {
+  return normalizePath(targetPath).toLowerCase();
+}
+
+function sortByScore(a: { score: number; title: string }, b: { score: number; title: string }) {
+  if (b.score !== a.score) {
+    return b.score - a.score;
+  }
+
+  return a.title.localeCompare(b.title);
+}
 
 export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => {
   const {
@@ -72,8 +103,10 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [paletteQuery, setPaletteQuery] = useState("");
+  const [paletteScope, setPaletteScope] = useState<CommandPaletteScope>("all");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearchingContent, setIsSearchingContent] = useState(false);
   const [isWorkspaceMode, setIsWorkspaceMode] = useState(true);
   const [sidebarNodes, setSidebarNodes] = useState<DirectoryNode[]>([]);
   const [expandedFolderPaths, setExpandedFolderPaths] = useState<string[]>([]);
@@ -83,7 +116,12 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     nonce: number;
   } | null>(null);
   const draftFileCreationRef = useRef<Promise<FileDocument | null> | null>(null);
-  const deferredPaletteQuery = useDeferredValue(paletteQuery);
+  const searchRequestIdRef = useRef(0);
+  const parsedPaletteQuery = useMemo(
+    () => parseCommandPaletteQuery(paletteQuery, paletteScope),
+    [paletteQuery, paletteScope],
+  );
+  const deferredPaletteSearchQuery = useDeferredValue(parsedPaletteQuery.query);
 
   const files = useMemo(() => flattenFiles(tree, rootPath), [rootPath, tree]);
   const wordCount = useMemo(() => {
@@ -318,25 +356,51 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
   }, [activeFile?.path, draftContent, isDirty, isSaving, markSaved, setError, setSaving, glyph]);
 
   useEffect(() => {
+    searchRequestIdRef.current += 1;
+    const requestId = searchRequestIdRef.current;
+
     if (!isPaletteOpen) {
       setSearchResults([]);
+      setIsSearchingContent(false);
       return;
     }
 
-    const query = deferredPaletteQuery.trim().toLowerCase();
+    const query = deferredPaletteSearchQuery.trim();
 
-    if (!isWorkspaceMode || !query || query.startsWith("theme")) {
+    if (parsedPaletteQuery.scope !== "content" || !isWorkspaceMode || query.length < 2) {
       setSearchResults([]);
+      setIsSearchingContent(false);
       return;
     }
 
     const timer = window.setTimeout(async () => {
-      const results = await glyph.searchWorkspace(query);
-      setSearchResults(results);
-    }, 120);
+      setIsSearchingContent(true);
+
+      try {
+        const results = await glyph.searchWorkspace(query);
+        if (searchRequestIdRef.current !== requestId) {
+          return;
+        }
+
+        startTransition(() => {
+          setSearchResults(results);
+        });
+      } catch (searchError) {
+        if (searchRequestIdRef.current !== requestId) {
+          return;
+        }
+
+        console.error("Workspace search failed:", searchError);
+        setSearchResults([]);
+      } finally {
+        if (searchRequestIdRef.current === requestId) {
+          setIsSearchingContent(false);
+        }
+      }
+    }, 180);
 
     return () => window.clearTimeout(timer);
-  }, [deferredPaletteQuery, isPaletteOpen, isWorkspaceMode, glyph]);
+  }, [deferredPaletteSearchQuery, isPaletteOpen, isWorkspaceMode, parsedPaletteQuery.scope, glyph]);
 
   useEffect(() => {
     if (!settings) {
@@ -639,7 +703,6 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     [settings?.shortcuts],
   );
 
-  // Stable commands list — only rebuilds when actions/shortcuts change, never on query change
   const baseCommands = useMemo<CommandPaletteItem[]>(
     () => [
       {
@@ -648,16 +711,16 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
         subtitle: "Create a fresh markdown note",
         shortcut: getShortcutDisplay(shortcuts, "new-note"),
         section: "Actions",
-        kind: "command",
+        kind: "action",
         onSelect: () => void createNote(),
       },
       {
         id: "open-file",
-        title: "Open File",
+        title: "Open file",
         subtitle: "Open an existing markdown file",
         shortcut: getShortcutDisplay(shortcuts, "open-file"),
         section: "Actions",
-        kind: "command",
+        kind: "action",
         onSelect: async () => {
           const file = await glyph.openDocument();
           if (file) {
@@ -668,11 +731,11 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
       },
       {
         id: "open-folder",
-        title: "Open Folder",
+        title: "Open folder",
         subtitle: "Open a folder as a workspace",
         shortcut: getShortcutDisplay(shortcuts, "open-folder"),
         section: "Actions",
-        kind: "command",
+        kind: "action",
         onSelect: async () => {
           const workspace = await glyph.openFolder();
           if (workspace) {
@@ -684,11 +747,11 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
       },
       {
         id: "navigate-back",
-        title: "Navigate Back",
+        title: "Navigate back",
         subtitle: "Go to previous file in history",
         shortcut: getShortcutDisplay(shortcuts, "navigate-back"),
-        section: "Navigation",
-        kind: "command",
+        section: "Actions",
+        kind: "action",
         onSelect: () => {
           void navigateBack();
           setIsPaletteOpen(false);
@@ -696,11 +759,11 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
       },
       {
         id: "navigate-forward",
-        title: "Navigate Forward",
+        title: "Navigate forward",
         subtitle: "Go to next file in history",
         shortcut: getShortcutDisplay(shortcuts, "navigate-forward"),
-        section: "Navigation",
-        kind: "command",
+        section: "Actions",
+        kind: "action",
         onSelect: () => {
           void navigateForward();
           setIsPaletteOpen(false);
@@ -712,7 +775,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
         subtitle: "Adjust workspace defaults",
         shortcut: getShortcutDisplay(shortcuts, "settings"),
         section: "Actions",
-        kind: "command",
+        kind: "action",
         onSelect: () => {
           setIsSettingsOpen(true);
           setIsPaletteOpen(false);
@@ -723,7 +786,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
         title: isFocusMode ? "Exit Focus Mode" : "Enter Focus Mode",
         subtitle: "Hide navigation and keep the note centered",
         section: "View",
-        kind: "command",
+        kind: "action",
         onSelect: () => {
           void toggleFocusMode();
           setIsPaletteOpen(false);
@@ -734,7 +797,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
         title: isReadingMode ? "Exit Reading Mode" : "Enter Reading Mode",
         subtitle: "Switch between editing and distraction-free reading",
         section: "View",
-        kind: "command",
+        kind: "action",
         onSelect: () => {
           void toggleReadingMode();
           setIsPaletteOpen(false);
@@ -744,12 +807,12 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
         ? [
             {
               id: "pin-note",
-              title: isActiveFilePinned ? "Unpin Current Note" : "Pin Current Note",
+              title: isActiveFilePinned ? "Unpin current note" : "Pin current note",
               subtitle: isActiveFilePinned
                 ? "Remove it from quick access"
                 : "Keep it near the top of the sidebar",
-              section: "Note",
-              kind: "command" as const,
+              section: "Current note",
+              kind: "action" as const,
               onSelect: () => {
                 void togglePinnedFile(activeFile.path);
                 setIsPaletteOpen(false);
@@ -757,14 +820,25 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
             },
             {
               id: "favorite-note",
-              title: isActiveFileFavorite ? "Unfavorite Current Note" : "Favorite Current Note",
+              title: isActiveFileFavorite ? "Unfavorite current note" : "Favorite current note",
               subtitle: isActiveFileFavorite
                 ? "Remove it from favorites"
                 : "Keep it in your favorites section",
-              section: "Note",
-              kind: "command" as const,
+              section: "Current note",
+              kind: "action" as const,
               onSelect: () => {
                 void toggleFavoriteFile(activeFile.path);
+                setIsPaletteOpen(false);
+              },
+            },
+            {
+              id: "reveal-note",
+              title: "Reveal current note",
+              subtitle: folderRevealLabel,
+              section: "Current note",
+              kind: "action" as const,
+              onSelect: () => {
+                void revealInFinder(activeFile.path);
                 setIsPaletteOpen(false);
               },
             },
@@ -774,8 +848,8 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
         id: "theme-light",
         title: "Theme: Light",
         subtitle: "Switch to light mode",
-        section: "Theme",
-        kind: "command",
+        section: "Appearance",
+        kind: "action",
         onSelect: () => {
           void saveSettings({ themeMode: "light" });
           setIsPaletteOpen(false);
@@ -785,8 +859,8 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
         id: "theme-dark",
         title: "Theme: Dark",
         subtitle: "Switch to dark mode",
-        section: "Theme",
-        kind: "command",
+        section: "Appearance",
+        kind: "action",
         onSelect: () => {
           void saveSettings({ themeMode: "dark" });
           setIsPaletteOpen(false);
@@ -796,8 +870,8 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
         id: "theme-system",
         title: "Theme: System",
         subtitle: "Sync theme with system",
-        section: "Theme",
-        kind: "command",
+        section: "Appearance",
+        kind: "action",
         onSelect: () => {
           void saveSettings({ themeMode: "system" });
           setIsPaletteOpen(false);
@@ -807,12 +881,14 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     [
       activeFile,
       createNote,
+      folderRevealLabel,
       isActiveFileFavorite,
       isActiveFilePinned,
       isFocusMode,
       isReadingMode,
       navigateBack,
       navigateForward,
+      revealInFinder,
       saveSettings,
       shortcuts,
       syncOpenedFile,
@@ -825,7 +901,6 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     ],
   );
 
-  // Stable deduplicated file list — only rebuilds when sidebarNodes or files change, never on query change
   const allSearchableFiles = useMemo(() => {
     const seenPaths = new Set<string>();
     const result: Array<{ path: string; name: string; relativePath: string }> = [];
@@ -833,8 +908,9 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     const traverseSidebar = (nodes: DirectoryNode[], parentPath: string = "") => {
       for (const node of nodes) {
         if (node.type === "file") {
-          if (!seenPaths.has(node.path)) {
-            seenPaths.add(node.path);
+          const pathKey = getPathKey(node.path);
+          if (!seenPaths.has(pathKey)) {
+            seenPaths.add(pathKey);
             result.push({
               path: node.path,
               name: node.name,
@@ -849,8 +925,9 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     traverseSidebar(sidebarNodes);
 
     for (const f of files) {
-      if (!seenPaths.has(f.path)) {
-        seenPaths.add(f.path);
+      const pathKey = getPathKey(f.path);
+      if (!seenPaths.has(pathKey)) {
+        seenPaths.add(pathKey);
         result.push(f);
       }
     }
@@ -864,7 +941,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     for (const file of allSearchableFiles) {
       lookup.set(file.path, {
         path: file.path,
-        title: file.name.replace(/\.(md|mdx|markdown)$/i, ""),
+        title: getDisplayFileName(file.name),
         subtitle: file.relativePath,
       });
     }
@@ -872,7 +949,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     if (activeFile && !lookup.has(activeFile.path)) {
       lookup.set(activeFile.path, {
         path: activeFile.path,
-        title: activeFile.name.replace(/\.(md|mdx|markdown)$/i, ""),
+        title: getDisplayFileName(activeFile.name),
         subtitle: activeFile.path,
       });
     }
@@ -913,45 +990,83 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
   const nextHistoryItem = nextHistoryPath
     ? (noteShortcutLookup.get(nextHistoryPath) ?? null)
     : null;
-  const paletteItems = useMemo<CommandPaletteItem[]>(() => {
-    const query = deferredPaletteQuery.trim().toLowerCase();
-    const pinnedPaletteItems = pinnedNotes.slice(0, 8).map((note) => ({
-      id: `pinned-${note.path}`,
-      title: note.title,
-      subtitle: note.subtitle,
-      hint: "Pinned",
-      section: "Pinned Notes",
-      kind: "file" as const,
-      onSelect: () => void openFile(note.path),
-    }));
-    const favoritePaletteItems = favoriteNotes.slice(0, 8).map((note) => ({
-      id: `favorite-${note.path}`,
-      title: note.title,
-      subtitle: note.subtitle,
-      hint: "Favorite",
-      section: "Favorite Notes",
-      kind: "file" as const,
-      onSelect: () => void openFile(note.path),
-    }));
-    const recentPaletteItems = recentNotes.slice(0, 6).map((note) => ({
-      id: `recent-${note.path}`,
-      title: note.title,
-      subtitle: note.subtitle,
-      hint: "Recent",
-      section: "Recent Notes",
-      kind: "file" as const,
-      onSelect: () => void openFile(note.path),
-    }));
-    const historyPaletteItems: CommandPaletteItem[] = [];
+  const pinnedFileKeys = useMemo(
+    () => new Set((settings?.pinnedFiles ?? []).map(getPathKey)),
+    [settings?.pinnedFiles],
+  );
+  const favoriteFileKeys = useMemo(
+    () => new Set((settings?.favoriteFiles ?? []).map(getPathKey)),
+    [settings?.favoriteFiles],
+  );
+  const recentFileKeys = useMemo(
+    () => new Set((settings?.recentFiles ?? []).map(getPathKey)),
+    [settings?.recentFiles],
+  );
+  const previousHistoryKey = previousHistoryPath ? getPathKey(previousHistoryPath) : null;
+  const nextHistoryKey = nextHistoryPath ? getPathKey(nextHistoryPath) : null;
+  const activeFileKey = activeFile ? getPathKey(activeFile.path) : null;
+  const noteSearchEntries = useMemo(
+    () =>
+      allSearchableFiles.map((file) => {
+        const pathKey = getPathKey(file.path);
+        let badge: string | undefined;
+        let scoreBoost = 0;
 
+        if (pathKey === activeFileKey) {
+          badge = "Current";
+          scoreBoost += 120;
+        }
+        if (pathKey === previousHistoryKey) {
+          badge ??= "Back";
+          scoreBoost += 90;
+        }
+        if (pathKey === nextHistoryKey) {
+          badge ??= "Forward";
+          scoreBoost += 60;
+        }
+        if (pinnedFileKeys.has(pathKey)) {
+          badge ??= "Pinned";
+          scoreBoost += 180;
+        }
+        if (favoriteFileKeys.has(pathKey)) {
+          badge ??= "Favorite";
+          scoreBoost += 110;
+        }
+        if (recentFileKeys.has(pathKey)) {
+          badge ??= "Recent";
+          scoreBoost += 40;
+        }
+
+        return {
+          path: file.path,
+          title: getDisplayFileName(file.name),
+          subtitle: file.relativePath,
+          badge,
+          scoreBoost,
+        };
+      }),
+    [
+      activeFileKey,
+      allSearchableFiles,
+      favoriteFileKeys,
+      nextHistoryKey,
+      pinnedFileKeys,
+      previousHistoryKey,
+      recentFileKeys,
+    ],
+  );
+  const paletteItems = useMemo<CommandPaletteItem[]>(() => {
+    const query = parsedPaletteQuery.query.toLowerCase();
+
+    const historyPaletteItems: CommandPaletteItem[] = [];
     if (previousHistoryItem) {
       historyPaletteItems.push({
         id: `history-back-${previousHistoryItem.path}`,
         title: previousHistoryItem.title,
-        subtitle: `Back · ${previousHistoryItem.subtitle}`,
-        hint: "Back",
-        section: "History",
-        kind: "file",
+        subtitle: previousHistoryItem.subtitle,
+        badge: "Back",
+        section: "Jump back in",
+        kind: "note",
         onSelect: () => void navigateBack(),
       });
     }
@@ -960,109 +1075,224 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
       historyPaletteItems.push({
         id: `history-forward-${nextHistoryItem.path}`,
         title: nextHistoryItem.title,
-        subtitle: `Forward · ${nextHistoryItem.subtitle}`,
-        hint: "Forward",
-        section: "History",
-        kind: "file",
+        subtitle: nextHistoryItem.subtitle,
+        badge: "Forward",
+        section: "Jump back in",
+        kind: "note",
         onSelect: () => void navigateForward(),
       });
     }
 
-    const headingPaletteItems = outlineItems
-      .filter((heading) => !query || heading.title.toLowerCase().includes(query))
-      .slice(0, query ? 10 : 6)
-      .map((heading) => ({
-        id: `heading-${heading.id}`,
-        title: heading.title,
-        subtitle: `Heading · line ${heading.line}`,
-        hint: `H${heading.depth}`,
-        section: "Headings",
-        kind: "command" as const,
-        onSelect: () => {
-          requestOutlineJump(heading.id);
-          setIsPaletteOpen(false);
-        },
-      }));
+    const pinnedPaletteItems = pinnedNotes.slice(0, 6).map((note) => ({
+      id: `pinned-${note.path}`,
+      title: note.title,
+      subtitle: note.subtitle,
+      badge: note.badge ?? "Pinned",
+      section: "Pinned",
+      kind: "note" as const,
+      onSelect: () => void openFile(note.path),
+    }));
+    const favoritePaletteItems = favoriteNotes.slice(0, 6).map((note) => ({
+      id: `favorite-${note.path}`,
+      title: note.title,
+      subtitle: note.subtitle,
+      badge: note.badge ?? "Favorite",
+      section: "Favorites",
+      kind: "note" as const,
+      onSelect: () => void openFile(note.path),
+    }));
+    const recentPaletteItems = recentNotes.slice(0, 6).map((note) => ({
+      id: `recent-${note.path}`,
+      title: note.title,
+      subtitle: note.subtitle,
+      badge: note.badge ?? "Recent",
+      section: "Jump back in",
+      kind: "note" as const,
+      onSelect: () => void openFile(note.path),
+    }));
+    const headingPreviewItems = outlineItems.slice(0, 6).map((heading) => ({
+      id: `heading-preview-${heading.id}`,
+      title: heading.title,
+      subtitle: activeFile ? getDisplayFileName(activeFile.name) : "Current note",
+      meta: `Line ${heading.line}`,
+      badge: `H${heading.depth}`,
+      section: "Headings",
+      kind: "heading" as const,
+      onSelect: () => {
+        requestOutlineJump(heading.id);
+        setIsPaletteOpen(false);
+      },
+    }));
 
     if (!query) {
-      return [
-        ...pinnedPaletteItems,
-        ...favoritePaletteItems,
-        ...historyPaletteItems,
-        ...recentPaletteItems,
-        ...headingPaletteItems,
-        ...baseCommands,
-      ];
+      switch (parsedPaletteQuery.scope) {
+        case "notes":
+          return [
+            ...historyPaletteItems,
+            ...recentPaletteItems,
+            ...pinnedPaletteItems,
+            ...favoritePaletteItems,
+          ];
+        case "content":
+          return [];
+        case "headings":
+          return headingPreviewItems;
+        case "actions":
+          return baseCommands;
+        case "all":
+        default:
+          return [
+            ...historyPaletteItems,
+            ...recentPaletteItems,
+            ...pinnedPaletteItems,
+            ...favoritePaletteItems,
+            ...headingPreviewItems,
+            ...baseCommands,
+          ];
+      }
     }
 
-    const items: CommandPaletteItem[] = [];
+    const rankedNoteItems = noteSearchEntries
+      .flatMap((note) => {
+        const score = scoreCommandPaletteMatch(note.title, note.subtitle, query);
+        if (score === null) {
+          return [];
+        }
 
-    // Match commands by title only — never subtitle (prevents false positives)
-    const matchedCommands = baseCommands.filter((cmd) => cmd.title.toLowerCase().includes(query));
-    items.push(...matchedCommands);
-    items.push(
-      ...pinnedPaletteItems.filter(
-        (note) =>
-          note.title.toLowerCase().includes(query) || note.subtitle?.toLowerCase().includes(query),
-      ),
-    );
-    items.push(
-      ...favoritePaletteItems.filter(
-        (note) =>
-          note.title.toLowerCase().includes(query) || note.subtitle?.toLowerCase().includes(query),
-      ),
-    );
-    items.push(...historyPaletteItems);
-    items.push(
-      ...recentPaletteItems.filter(
-        (note) =>
-          note.title.toLowerCase().includes(query) || note.subtitle?.toLowerCase().includes(query),
-      ),
-    );
-    items.push(...headingPaletteItems);
+        return [
+          {
+            score: score + note.scoreBoost,
+            title: note.title,
+            item: {
+              id: `note-${note.path}`,
+              title: note.title,
+              subtitle: note.subtitle,
+              badge: note.badge,
+              section: "Notes",
+              kind: "note" as const,
+              onSelect: () => void openFile(note.path),
+            },
+          },
+        ];
+      })
+      .sort((left, right) => sortByScore(left, right))
+      .slice(0, 12)
+      .map((entry) => entry.item);
 
-    // Match files by name or path
-    const matchingFiles = allSearchableFiles.filter(
-      (file) =>
-        file.name.toLowerCase().includes(query) || file.relativePath.toLowerCase().includes(query),
-    );
+    const rankedHeadingItems = outlineItems
+      .flatMap((heading) => {
+        const score = scoreCommandPaletteMatch(
+          heading.title,
+          `${activeFile ? getDisplayFileName(activeFile.name) : "current note"} heading`,
+          query,
+        );
+        if (score === null) {
+          return [];
+        }
 
-    matchingFiles.slice(0, 12).forEach((file) => {
-      items.push({
-        id: file.path,
-        title: file.name,
-        subtitle: file.relativePath,
-        hint: "File",
-        section: "Files",
-        kind: "file",
-        onSelect: () => void openFile(file.path),
-      });
-    });
+        return [
+          {
+            score: score + 40,
+            title: heading.title,
+            item: {
+              id: `heading-${heading.id}`,
+              title: heading.title,
+              subtitle: activeFile ? getDisplayFileName(activeFile.name) : "Current note",
+              meta: `Line ${heading.line}`,
+              badge: `H${heading.depth}`,
+              section: "Headings",
+              kind: "heading" as const,
+              onSelect: () => {
+                requestOutlineJump(heading.id);
+                setIsPaletteOpen(false);
+              },
+            },
+          },
+        ];
+      })
+      .sort((left, right) => sortByScore(left, right))
+      .slice(0, 10)
+      .map((entry) => entry.item);
 
-    // Full-text content search results
-    searchResults.slice(0, 8).forEach((result) => {
-      items.push({
-        id: `search-${result.path}-${result.line}`,
-        title: result.name,
-        subtitle: `${result.snippet} · line ${result.line}`,
-        hint: "Match",
-        section: "Matches",
-        kind: "file",
-        onSelect: () => void openFile(result.path),
-      });
-    });
+    const rankedActionItems = baseCommands
+      .flatMap((command) => {
+        const score = scoreCommandPaletteMatch(
+          command.title,
+          `${command.subtitle ?? ""} ${command.section}`.trim(),
+          query,
+        );
+        if (score === null) {
+          return [];
+        }
 
-    return items;
+        return [
+          {
+            score,
+            title: command.title,
+            item: command,
+          },
+        ];
+      })
+      .sort((left, right) => sortByScore(left, right))
+      .slice(0, 12)
+      .map((entry) => entry.item);
+
+    const rankedContentItems = searchResults
+      .flatMap((result) => {
+        const relativePath = noteShortcutLookup.get(result.path)?.subtitle ?? result.name;
+        const title = getDisplayFileName(result.name);
+        const score = scoreCommandPaletteMatch(title, `${relativePath} ${result.snippet}`, query);
+        if (score === null) {
+          return [];
+        }
+
+        return [
+          {
+            score,
+            title,
+            item: {
+              id: `search-${result.path}-${result.line}`,
+              title,
+              subtitle: `${relativePath} · ${result.snippet}`,
+              meta: `Line ${result.line}`,
+              badge: "Text",
+              section: "Text matches",
+              kind: "match" as const,
+              onSelect: () => void openFile(result.path),
+            },
+          },
+        ];
+      })
+      .sort((left, right) => sortByScore(left, right))
+      .slice(0, 10)
+      .map((entry) => entry.item);
+
+    switch (parsedPaletteQuery.scope) {
+      case "notes":
+        return rankedNoteItems;
+      case "content":
+        return rankedContentItems;
+      case "headings":
+        return rankedHeadingItems;
+      case "actions":
+        return rankedActionItems;
+      case "all":
+      default:
+        return [...rankedNoteItems, ...rankedHeadingItems, ...rankedActionItems];
+    }
   }, [
-    allSearchableFiles,
+    activeFile,
     baseCommands,
-    deferredPaletteQuery,
     favoriteNotes,
-    nextHistoryItem,
     navigateBack,
     navigateForward,
+    nextHistoryItem,
+    noteSearchEntries,
+    noteShortcutLookup,
     openFile,
     outlineItems,
+    parsedPaletteQuery.query,
+    parsedPaletteQuery.scope,
     pinnedNotes,
     previousHistoryItem,
     recentNotes,
@@ -1070,17 +1300,39 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     searchResults,
   ]);
 
-  // Reset query when palette closes
+  const changePaletteScope = useCallback((nextScope: CommandPaletteScope) => {
+    setPaletteScope(nextScope);
+    setPaletteQuery((currentQuery) => parseCommandPaletteQuery(currentQuery, nextScope).query);
+  }, []);
+
+  const cyclePaletteScopeSelection = useCallback((direction: 1 | -1) => {
+    setPaletteScope((currentScope) => {
+      const nextScope = cycleCommandPaletteScope(currentScope, direction);
+      setPaletteQuery((currentQuery) => parseCommandPaletteQuery(currentQuery, nextScope).query);
+      return nextScope;
+    });
+  }, []);
+
   useEffect(() => {
     if (!isPaletteOpen) {
       setPaletteQuery("");
+      setPaletteScope("all");
+      setSearchResults([]);
+      setIsSearchingContent(false);
     }
   }, [isPaletteOpen]);
 
-  // Reset selected index whenever the query or results change
   useEffect(() => {
     setSelectedIndex(0);
-  }, [deferredPaletteQuery]);
+  }, [parsedPaletteQuery.query, parsedPaletteQuery.scope]);
+
+  useEffect(() => {
+    if (selectedIndex < paletteItems.length) {
+      return;
+    }
+
+    setSelectedIndex(0);
+  }, [paletteItems.length, selectedIndex]);
 
   useEffect(() => {
     const onKeyDown = async (event: KeyboardEvent) => {
@@ -1320,10 +1572,12 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     canGoBack,
     canGoForward,
     changeShortcuts,
+    changePaletteScope,
     changeThemeMode,
     chooseFolderAndUpdateWorkspace,
     clearOutlineJumpRequest,
     createNote,
+    cyclePaletteScopeSelection,
     draftContent,
     error,
     favoriteNotes,
@@ -1338,6 +1592,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     isActiveFilePinned,
     isFocusMode,
     isPaletteOpen,
+    isSearchingContent,
     isReadingMode,
     isSaving,
     isSettingsOpen,
@@ -1351,6 +1606,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     outlineJumpRequest,
     paletteItems,
     paletteQuery,
+    paletteScope,
     pinnedNotes,
     previousHistoryItem,
     readingTime,

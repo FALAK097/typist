@@ -1182,7 +1182,7 @@ export const MarkdownEditor = ({
             >
               <div className="flex items-center gap-2">
                 <SearchIcon size={13} className="opacity-60 flex-shrink-0" />
-                <span>Search notes</span>
+                <span>Go to anything</span>
               </div>
               <span className="font-mono text-xs opacity-50 ml-4 flex-shrink-0">
                 {commandPaletteShortcut ?? "⌘P"}
