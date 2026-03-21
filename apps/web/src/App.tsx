@@ -1,4 +1,4 @@
-import { Check, Copy, ExternalLink, Terminal } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const AppleIcon = () => (
@@ -40,6 +40,7 @@ const DOWNLOAD_URLS = {
 } as const;
 
 const BREW_INSTALL_COMMAND = "brew install --cask FALAK097/glyph/glyph";
+const INSTALL_METHOD_LABELS = ["curl", "npm", "bun", "brew", "paru"] as const;
 
 type Feature = {
   eyebrow: string;
@@ -211,31 +212,15 @@ export function App() {
             />
           </a>
 
-          <div className="flex w-full flex-col items-center gap-2 sm:w-auto sm:items-end">
-            <div className="flex w-full items-center justify-center gap-2 sm:w-auto sm:justify-end">
-              <a href={DOWNLOAD_URLS.mac} className="download-button">
-                <AppleIcon />
-                Download for macOS
-              </a>
-              <a
-                href={DOWNLOAD_URLS.windows}
-                className="download-button download-button--secondary"
-              >
-                <WindowsIcon />
-                Download for Windows
-              </a>
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[0.78rem] text-[var(--ink-soft)] sm:justify-end">
-              <a href="#install-with-homebrew" className="micro-link">
-                Install with Homebrew
-              </a>
-              <a href={DOWNLOAD_URLS.changelog} className="micro-link">
-                Changelog
-              </a>
-              <a href={DOWNLOAD_URLS.releases} className="micro-link">
-                All releases
-              </a>
-            </div>
+          <div className="flex w-full items-center justify-center gap-2 sm:w-auto sm:justify-end">
+            <a href={DOWNLOAD_URLS.mac} className="download-button">
+              <AppleIcon />
+              Download for macOS
+            </a>
+            <a href={DOWNLOAD_URLS.windows} className="download-button download-button--secondary">
+              <WindowsIcon />
+              Download for Windows
+            </a>
           </div>
         </div>
       </nav>
@@ -262,50 +247,39 @@ export function App() {
           </div>
           <div
             id="install-with-homebrew"
-            className="install-panel mt-10 w-full max-w-3xl text-left"
+            className="install-strip mt-10 w-full max-w-3xl text-left"
           >
-            <div className="install-panel__header">
-              <div>
-                <span className="install-panel__eyebrow">Install with Homebrew</span>
-                <h2 className="install-panel__title">One command. Native-feeling setup.</h2>
-              </div>
-              <a href={DOWNLOAD_URLS.releases} className="install-panel__release-link">
-                Browse all releases
-                <ExternalLink size={14} aria-hidden="true" />
-              </a>
-            </div>
-
-            <div className="install-command-shell">
-              <div className="install-command-shell__prompt">
-                <Terminal size={16} aria-hidden="true" />
-                <span>Terminal</span>
-              </div>
-              <div className="install-command-shell__body">
-                <code>{BREW_INSTALL_COMMAND}</code>
-                <button
-                  type="button"
-                  className="install-command-shell__copy"
-                  onClick={() => void handleCopyBrewCommand()}
+            <div className="install-strip__tabs" aria-hidden="true">
+              {INSTALL_METHOD_LABELS.map((label) => (
+                <span
+                  key={label}
+                  className={`install-strip__tab ${label === "brew" ? "install-strip__tab--active" : ""}`}
                 >
-                  {hasCopiedBrew ? (
-                    <>
-                      <Check size={15} aria-hidden="true" />
-                      Copied
-                    </>
-                  ) : (
-                    <>
-                      <Copy size={15} aria-hidden="true" />
-                      Copy
-                    </>
-                  )}
-                </button>
-              </div>
+                  {label}
+                </span>
+              ))}
             </div>
 
-            <p className="install-panel__note">
-              Prefer a manual install? Use the platform download buttons above for the latest macOS
-              DMG and Windows installer, or browse the full release history and changelog.
-            </p>
+            <div className="install-strip__command">
+              <code>{BREW_INSTALL_COMMAND}</code>
+              <button
+                type="button"
+                className="install-strip__copy"
+                onClick={() => void handleCopyBrewCommand()}
+              >
+                {hasCopiedBrew ? (
+                  <>
+                    <Check size={15} aria-hidden="true" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy size={15} aria-hidden="true" />
+                    Copy
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -393,8 +367,6 @@ export function App() {
         <div className="mx-auto max-w-screen-2xl px-6 py-10 text-center sm:px-8 lg:px-12">
           <div className="mx-auto mb-8 h-px max-w-4xl bg-black/10" />
           <p className="text-[0.8rem] font-medium tracking-[0.03em] text-[var(--ink-soft)]">
-            Free to use
-            <span className="px-2 text-black/25">·</span>
             Made by{" "}
             <a
               href="https://falakgala.dev"
@@ -421,13 +393,6 @@ export function App() {
               className="footer-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--surface-page)]"
             >
               Changelog
-            </a>
-            <span className="px-2 text-black/25">·</span>
-            <a
-              href="#install-with-homebrew"
-              className="footer-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--surface-page)]"
-            >
-              Homebrew
             </a>
           </p>
         </div>
