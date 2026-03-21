@@ -101,7 +101,7 @@ const features: Feature[] = [
   },
   {
     eyebrow: "Discovery",
-    title: "Search Everything",
+    title: "Find Notes",
     description:
       "Search all your markdown files in one place and find the exact note you need in seconds.",
     className: "md:col-span-4",
@@ -345,41 +345,88 @@ export function App() {
                   feature.compactHeight ? "feature-card--compact" : ""
                 } ${feature.emphasis === "media" ? "feature-card--media" : ""} flex flex-col justify-between`}
               >
-                <div className={feature.emphasis === "media" ? "max-w-none" : "max-w-md"}>
-                  <span
-                    className={`feature-card__eyebrow ${darkCard ? "feature-card__eyebrow--dark" : ""}`}
-                  >
-                    {feature.eyebrow}
-                  </span>
-                  <h2
-                    className={`feature-card__title ${darkCard ? "feature-card__title--dark" : ""} ${
-                      feature.emphasis === "media" ? "feature-card__title--media" : ""
-                    }`}
-                  >
-                    {feature.title}
-                  </h2>
-                  <p
-                    className={`feature-card__description ${
-                      darkCard ? "feature-card__description--dark" : ""
-                    } ${feature.emphasis === "media" ? "feature-card__description--media" : ""}`}
-                  >
-                    {feature.title === "Open Source" ? (
-                      <>
-                        <a
-                          href={DOWNLOAD_URLS.github}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="footer-link"
-                        >
-                          Glyph
-                        </a>{" "}
-                        is transparent and community-friendly. Inspect the code, contribute
-                        improvements, or adapt it to your workflow.
-                      </>
-                    ) : (
-                      feature.description
-                    )}
-                  </p>
+                <div
+                  className={
+                    feature.themes
+                      ? "flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-12"
+                      : feature.emphasis === "media"
+                        ? "max-w-none"
+                        : "max-w-md"
+                  }
+                >
+                  <div className={feature.themes ? "max-w-md" : undefined}>
+                    <span
+                      className={`feature-card__eyebrow ${darkCard ? "feature-card__eyebrow--dark" : ""}`}
+                    >
+                      {feature.eyebrow}
+                    </span>
+                    <h2
+                      className={`feature-card__title ${darkCard ? "feature-card__title--dark" : ""} ${
+                        feature.emphasis === "media" ? "feature-card__title--media" : ""
+                      } ${feature.title === "Find Notes" ? "whitespace-nowrap" : ""}`}
+                    >
+                      {feature.title}
+                    </h2>
+                    <p
+                      className={`feature-card__description ${
+                        darkCard ? "feature-card__description--dark" : ""
+                      } ${feature.emphasis === "media" ? "feature-card__description--media" : ""}`}
+                    >
+                      {feature.title === "Open Source" ? (
+                        <>
+                          <a
+                            href={DOWNLOAD_URLS.github}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="footer-link"
+                          >
+                            Glyph
+                          </a>{" "}
+                          is transparent and community-friendly. Inspect the code, contribute
+                          improvements, or adapt it to your workflow.
+                        </>
+                      ) : (
+                        feature.description
+                      )}
+                    </p>
+                  </div>
+
+                  {feature.themes ? (
+                    <div className="hidden w-full max-w-[18rem] grid-cols-1 gap-3 lg:grid">
+                      <div className="rounded-[1.35rem] border border-black/8 bg-white/70 p-4 shadow-[0_10px_30px_-28px_oklch(0.18_0.01_110_/_0.28)]">
+                        <span className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[var(--ink-muted)]">
+                          Theme Mode
+                        </span>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <span className="rounded-full border border-black/8 bg-white px-3 py-1.5 text-[0.74rem] font-medium text-[var(--ink-strong)]">
+                            Light
+                          </span>
+                          <span className="rounded-full border border-black/8 bg-[var(--surface-strong)] px-3 py-1.5 text-[0.74rem] font-medium text-[var(--ink-inverse)]">
+                            Dark
+                          </span>
+                          <span className="rounded-full border border-black/8 bg-[color:color-mix(in_oklab,white_88%,var(--surface-page))] px-3 py-1.5 text-[0.74rem] font-medium text-[var(--ink-soft)]">
+                            System
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="rounded-[1.35rem] border border-black/8 bg-[color:color-mix(in_oklab,white_74%,var(--surface-page))] p-4 shadow-[0_10px_30px_-28px_oklch(0.18_0.01_110_/_0.24)]">
+                        <span className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[var(--ink-muted)]">
+                          Tuned Contrast
+                        </span>
+                        <div className="mt-4 flex items-center gap-3">
+                          <span className="h-8 w-8 rounded-full border border-black/8 bg-[var(--surface-card)]" />
+                          <span className="h-8 w-8 rounded-full border border-black/8 bg-[var(--surface-paper)]" />
+                          <span className="h-8 w-8 rounded-full border border-black/8 bg-[var(--surface-strong)]" />
+                          <span className="h-8 w-8 rounded-full border border-black/8 bg-[color:color-mix(in_oklab,var(--surface-page)_70%,white)]" />
+                        </div>
+                        <p className="mt-3 text-[0.82rem] leading-6 text-[var(--ink-soft)]">
+                          Switch cleanly between daylight reading, low-light review, and automatic
+                          system matching.
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
 
                 {feature.image ? (
