@@ -1,6 +1,6 @@
-import { getBaseName, getDisplayFileName, getRelativePath, normalizePath } from "./paths";
-
 import type { BreadcrumbItem, OutlineItem } from "@/types/navigation";
+
+import { getBaseName, getDisplayFileName, getRelativePath, normalizePath } from "./paths";
 
 const HEADING_PATTERN = /^(#{1,4})\s+(.*)$/;
 

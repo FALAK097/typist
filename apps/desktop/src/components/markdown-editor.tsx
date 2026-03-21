@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { MutableRefObject } from "react";
+import type { CSSProperties, MutableRefObject } from "react";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -46,6 +46,8 @@ import {
   LinkIcon,
   PanelLeftIcon,
   PanelRightIcon,
+  PinIcon,
+  PinOffIcon,
   PlusIcon,
   RevealInFolderIcon,
   SearchIcon,
@@ -442,13 +444,14 @@ export const MarkdownEditor = ({
     }, 2000);
   };
 
-  const handleJumpToHeading = (item: EditorOutlineItem) => {
-    if (!editor) {
+  const handleJumpToHeading = useCallback((item: EditorOutlineItem) => {
+    const nextEditor = liveEditorRef.current;
+    if (!nextEditor) {
       return;
     }
 
-    editor.chain().focus().setTextSelection(item.pos).scrollIntoView().run();
-  };
+    nextEditor.chain().focus().setTextSelection(item.pos).scrollIntoView().run();
+  }, []);
 
   const storeNoteViewState = useCallback((targetFilePath: string | null | undefined) => {
     const nextEditor = liveEditorRef.current;
@@ -765,6 +768,22 @@ export const MarkdownEditor = ({
     return collectEditorOutline(editor);
   }, [content, editor]);
 
+  const outlineIndentStyles = useMemo<Record<number, CSSProperties>>(() => {
+    const styles: Record<number, CSSProperties> = {};
+
+    outlineItems.forEach((item) => {
+      if (styles[item.depth]) {
+        return;
+      }
+
+      styles[item.depth] = {
+        paddingLeft: `${12 + (item.depth - 1) * 12}px`,
+      };
+    });
+
+    return styles;
+  }, [outlineItems]);
+
   useEffect(() => {
     if (!editor || content === lastSyncedMarkdown.current) {
       return;
@@ -819,7 +838,7 @@ export const MarkdownEditor = ({
     }
 
     onOutlineJumpHandled?.();
-  }, [editor, onOutlineJumpHandled, outlineJumpRequest]);
+  }, [editor, handleJumpToHeading, onOutlineJumpHandled, outlineJumpRequest]);
 
   useEffect(() => {
     return () => {
@@ -1275,7 +1294,11 @@ export const MarkdownEditor = ({
                     disabled={!filePath}
                     type="button"
                   >
-                    <CheckCircleIcon size={14} className="opacity-70" />
+                    {isActiveFilePinned ? (
+                      <PinOffIcon size={14} className="opacity-70" />
+                    ) : (
+                      <PinIcon size={14} className="opacity-70" />
+                    )}
                     {isActiveFilePinned ? "Unpin note" : "Pin note"}
                   </Button>
                 ) : null}
@@ -1531,9 +1554,7 @@ export const MarkdownEditor = ({
                       size="sm"
                       type="button"
                       className="h-auto w-full justify-start rounded-xl px-3 py-2 text-left text-sm text-foreground hover:bg-muted/70"
-                      style={{
-                        paddingLeft: `${12 + (item.depth - 1) * 12}px`,
-                      }}
+                      style={outlineIndentStyles[item.depth]}
                       onClick={() => handleJumpToHeading(item)}
                     >
                       <div className="min-w-0 flex-1">

@@ -12,6 +12,8 @@ import {
   FileIcon,
   FolderIcon,
   MoreVerticalIcon,
+  PinIcon,
+  PinOffIcon,
   PencilIcon,
   RevealInFolderIcon,
   TrashIcon,
@@ -59,6 +61,7 @@ export const SidebarTreeNode = ({
   const favoritePathList = favoritePaths ?? [];
   const isPinned = pinnedPathList.some((path) => isSamePath(path, node.path));
   const isFavorite = favoritePathList.some((path) => isSamePath(path, node.path));
+  const isActive = isSamePath(activePath, node.path);
   const pinLabel = isPinned ? "Unpin note" : "Pin note";
   const favoriteLabel = isFavorite ? "Remove from favorites" : "Add to favorites";
 
@@ -342,7 +345,7 @@ export const SidebarTreeNode = ({
     >
       <div
         className={`mx-1 flex min-w-0 flex-1 cursor-pointer items-center rounded-md transition-colors ${
-          activePath === node.path
+          isActive
             ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm ring-1 ring-sidebar-accent/30"
             : "text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground focus-within:bg-sidebar-accent/70 focus-within:text-sidebar-accent-foreground"
         }`}
@@ -353,7 +356,7 @@ export const SidebarTreeNode = ({
           paddingBottom: "6px",
         }}
       >
-        {activePath === node.path ? (
+        {isActive ? (
           <span
             className="mr-2 h-5 w-1 rounded-full bg-sidebar-accent-foreground/80"
             aria-hidden="true"
@@ -362,7 +365,7 @@ export const SidebarTreeNode = ({
         <FileIcon
           size={12}
           className={`mr-2 shrink-0 transition-colors ${
-            activePath === node.path
+            isActive
               ? "text-sidebar-accent-foreground/70"
               : "text-muted-foreground group-hover/file-row:text-sidebar-accent-foreground/70"
           }`}
@@ -466,7 +469,11 @@ export const SidebarTreeNode = ({
             }}
             type="button"
           >
-            <PencilIcon size={14} className="opacity-70" />
+            {isPinned ? (
+              <PinOffIcon size={14} className="opacity-70" />
+            ) : (
+              <PinIcon size={14} className="opacity-70" />
+            )}
             {pinLabel}
           </Button>
           <Button

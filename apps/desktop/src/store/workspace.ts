@@ -1,4 +1,7 @@
 import { create } from "zustand";
+
+import { isSamePath } from "@/lib/paths";
+
 import type { DirectoryNode, FileDocument } from "../shared/workspace";
 
 type WorkspaceState = {
@@ -94,7 +97,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       const newHistory = state.navigationHistory.slice(0, state.navigationIndex + 1);
 
       // Don't add duplicate consecutive entries
-      if (newHistory[newHistory.length - 1] === filePath) {
+      if (isSamePath(newHistory[newHistory.length - 1], filePath)) {
         return state;
       }
 
@@ -114,22 +117,44 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   replaceHistoryPath: (oldPath, newPath) => {
     set((state) => ({
       navigationHistory: state.navigationHistory.map((entry) =>
-        entry === oldPath ? newPath : entry,
+        isSamePath(entry, oldPath) ? newPath : entry,
       ),
     }));
   },
   removeHistoryPath: (targetPath) => {
     set((state) => {
-      const nextHistory = state.navigationHistory.filter((entry) => entry !== targetPath);
+      const removedIndices: number[] = [];
+      const nextHistory = state.navigationHistory.filter((entry, index) => {
+        if (isSamePath(entry, targetPath)) {
+          removedIndices.push(index);
+          return false;
+        }
+
+        return true;
+      });
 
       if (nextHistory.length === state.navigationHistory.length) {
         return state;
       }
 
+      if (nextHistory.length === 0) {
+        return {
+          navigationHistory: [],
+          navigationIndex: -1,
+        };
+      }
+
+      const removedBeforeCurrent = removedIndices.filter(
+        (index) => index < state.navigationIndex,
+      ).length;
+      const removedCurrentEntry = removedIndices.includes(state.navigationIndex);
+      const nextNavigationIndex = removedCurrentEntry
+        ? state.navigationIndex - removedBeforeCurrent - 1
+        : state.navigationIndex - removedBeforeCurrent;
+
       return {
         navigationHistory: nextHistory,
-        navigationIndex:
-          nextHistory.length === 0 ? -1 : Math.min(state.navigationIndex, nextHistory.length - 1),
+        navigationIndex: Math.max(0, Math.min(nextNavigationIndex, nextHistory.length - 1)),
       };
     });
   },

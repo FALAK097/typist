@@ -41,7 +41,7 @@ const HugeIcon = ({ icon, size, className, color, strokeWidth }: HugeIconProps) 
   );
 };
 
-const SvgIcon = ({ size = 16, className, color = "currentColor" }: IconProps) => ({
+const getSvgProps = ({ size = 16, className, color = "currentColor" }: IconProps) => ({
   size,
   className,
   color,
@@ -91,7 +91,7 @@ export const CheckCircleIcon = (props: IconProps) => (
 export const XIcon = (props: IconProps) => <HugeIcon icon={Cancel01Svg} {...props} />;
 
 export const PinIcon = (props: IconProps) => {
-  const svg = SvgIcon(props);
+  const svg = getSvgProps(props);
   return (
     <svg
       width={svg.size}
@@ -111,8 +111,30 @@ export const PinIcon = (props: IconProps) => {
   );
 };
 
+export const PinOffIcon = (props: IconProps) => {
+  const svg = getSvgProps(props);
+  return (
+    <svg
+      width={svg.size}
+      height={svg.size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={svg.color}
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={svg.className}
+      aria-hidden="true"
+    >
+      <path d="M8.5 4.5h7l-1.4 5 2.9 2.9H7l2.9-2.9-1.4-5Z" />
+      <path d="M12 12.4V20" />
+      <path d="M4.5 4.5 19.5 19.5" />
+    </svg>
+  );
+};
+
 export const StarIcon = (props: IconProps) => {
-  const svg = SvgIcon(props);
+  const svg = getSvgProps(props);
   return (
     <svg
       width={svg.size}
@@ -132,7 +154,7 @@ export const StarIcon = (props: IconProps) => {
 };
 
 export const FocusIcon = (props: IconProps) => {
-  const svg = SvgIcon(props);
+  const svg = getSvgProps(props);
   return (
     <svg
       width={svg.size}
@@ -156,7 +178,7 @@ export const FocusIcon = (props: IconProps) => {
 };
 
 export const ReadingModeIcon = (props: IconProps) => {
-  const svg = SvgIcon(props);
+  const svg = getSvgProps(props);
   return (
     <svg
       width={svg.size}
@@ -177,7 +199,7 @@ export const ReadingModeIcon = (props: IconProps) => {
 };
 
 export const OutlineIcon = (props: IconProps) => {
-  const svg = SvgIcon(props);
+  const svg = getSvgProps(props);
   return (
     <svg
       width={svg.size}

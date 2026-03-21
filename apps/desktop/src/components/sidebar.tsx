@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import type { CSSProperties, MouseEvent, ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -21,49 +21,45 @@ import {
   CheckCircleIcon,
   FileIcon,
   MoreVerticalIcon,
+  PinIcon,
+  PinOffIcon,
   PlusIcon,
   RevealInFolderIcon,
   SearchIcon,
 } from "./icons";
 import { SidebarTreeNode } from "./sidebar-tree-node";
 
-const SidebarSection = ({
-  title,
-  count,
-  children,
-}: {
+type SidebarSectionProps = {
   title: string;
   count?: number;
   children: ReactNode;
-}) => (
-  <section className="overflow-hidden rounded-2xl border border-sidebar-border/70 bg-sidebar/65 shadow-sm">
-    <div className="flex items-center justify-between border-b border-sidebar-border/60 px-3 py-2.5">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-        {title}
-      </p>
-      {typeof count === "number" ? (
-        <span className="rounded-full border border-border/60 bg-background/70 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-          {count}
-        </span>
-      ) : null}
-    </div>
-    <div className="p-2">{children}</div>
-  </section>
-);
+};
+
+const SidebarSection = memo(function SidebarSection({
+  title,
+  count,
+  children,
+}: SidebarSectionProps) {
+  return (
+    <section className="overflow-hidden rounded-2xl border border-sidebar-border/70 bg-sidebar/65 shadow-sm">
+      <div className="flex items-center justify-between border-b border-sidebar-border/60 px-3 py-2.5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          {title}
+        </p>
+        {typeof count === "number" ? (
+          <span className="rounded-full border border-border/60 bg-background/70 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+            {count}
+          </span>
+        ) : null}
+      </div>
+      <div className="p-2">{children}</div>
+    </section>
+  );
+});
 
 const normalizePathKey = (path: string) => normalizePath(path).toLowerCase();
 
-const SidebarShortcutRow = ({
-  activePath,
-  item,
-  isPinned,
-  isFavorite,
-  folderRevealLabel,
-  onOpenFile,
-  onRevealInFinder,
-  onTogglePinnedFile,
-  onToggleFavoriteFile,
-}: {
+type SidebarShortcutRowProps = {
   activePath: string | null;
   item: NoteShortcutItem;
   isPinned: boolean;
@@ -73,7 +69,19 @@ const SidebarShortcutRow = ({
   onRevealInFinder: (targetPath: string) => void;
   onTogglePinnedFile?: (filePath: string) => void;
   onToggleFavoriteFile?: (filePath: string) => void;
-}) => {
+};
+
+const SidebarShortcutRow = memo(function SidebarShortcutRow({
+  activePath,
+  item,
+  isPinned,
+  isFavorite,
+  folderRevealLabel,
+  onOpenFile,
+  onRevealInFinder,
+  onTogglePinnedFile,
+  onToggleFavoriteFile,
+}: SidebarShortcutRowProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [menuCoords, setMenuCoords] = useState<{ top: number; left: number } | null>(null);
   const isActive = normalizePathKey(activePath ?? "") === normalizePathKey(item.path);
@@ -203,7 +211,11 @@ const SidebarShortcutRow = ({
                 }}
                 type="button"
               >
-                <PlusIcon size={14} className="opacity-70" />
+                {isPinned ? (
+                  <PinOffIcon size={14} className="opacity-70" />
+                ) : (
+                  <PinIcon size={14} className="opacity-70" />
+                )}
                 {pinLabel}
               </Button>
             ) : null}
@@ -242,7 +254,7 @@ const SidebarShortcutRow = ({
       ) : null}
     </div>
   );
-};
+});
 
 const SidebarShortcutList = ({
   activePath,
