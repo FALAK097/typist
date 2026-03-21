@@ -408,9 +408,6 @@ export function App() {
                             System
                           </span>
                         </div>
-                        <p className="mt-4 max-w-[22ch] text-[0.82rem] leading-6 text-[var(--ink-soft)]">
-                          Switch manually or let Glyph follow your system appearance automatically.
-                        </p>
                       </div>
                     </div>
                   ) : null}
