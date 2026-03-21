@@ -47,9 +47,27 @@ type GitHubReleaseAsset = {
   browser_download_url: string;
 };
 
-type GitHubReleaseResponse = {
-  assets?: GitHubReleaseAsset[];
-};
+function isGitHubReleaseAsset(value: unknown): value is GitHubReleaseAsset {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const asset = value as Record<string, unknown>;
+  return typeof asset.name === "string" && typeof asset.browser_download_url === "string";
+}
+
+function getReleaseAssets(release: unknown): GitHubReleaseAsset[] {
+  if (typeof release !== "object" || release === null) {
+    throw new Error("Unexpected latest release response");
+  }
+
+  const releasePayload = release as { assets?: unknown };
+  if (!Array.isArray(releasePayload.assets)) {
+    throw new Error("Latest release is missing assets");
+  }
+
+  return releasePayload.assets.filter(isGitHubReleaseAsset);
+}
 
 type Feature = {
   eyebrow: string;
@@ -192,7 +210,8 @@ export function App() {
     try {
       await navigator.clipboard.writeText(BREW_INSTALL_COMMAND);
       setHasCopiedBrew(true);
-    } catch {
+    } catch (error) {
+      console.error("Unable to copy Homebrew install command.", error);
       setHasCopiedBrew(false);
     }
   };
@@ -225,15 +244,16 @@ export function App() {
         throw new Error("Unable to resolve latest release");
       }
 
-      const release = (await response.json()) as GitHubReleaseResponse;
-      const asset = resolveDownloadAsset(release.assets ?? [], platform);
+      const release = await response.json();
+      const asset = resolveDownloadAsset(getReleaseAssets(release), platform);
 
       if (!asset) {
         throw new Error("No matching asset found");
       }
 
       window.location.href = asset.browser_download_url;
-    } catch {
+    } catch (error) {
+      console.error("Unable to resolve latest release download.", error);
       window.location.href = DOWNLOAD_URLS.releases;
     } finally {
       setResolvingPlatform(null);

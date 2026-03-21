@@ -137,10 +137,8 @@ function normalizeReleaseNotes(
   return null;
 }
 
-function hasPendingUpdate(updateStatus: UpdateState["status"]) {
-  return (
-    updateStatus === "available" || updateStatus === "downloading" || updateStatus === "downloaded"
-  );
+function shouldPreserveUpdateState(updateStatus: UpdateState["status"]) {
+  return updateStatus === "downloading" || updateStatus === "downloaded";
 }
 
 function wireAutoUpdater() {
@@ -157,7 +155,7 @@ function wireAutoUpdater() {
   autoUpdater.autoInstallOnAppQuit = true;
 
   autoUpdater.on("checking-for-update", () => {
-    if (hasPendingUpdate(updateState.status)) {
+    if (shouldPreserveUpdateState(updateState.status)) {
       setUpdateState({
         checkedAt: new Date().toISOString(),
         errorMessage: null,
@@ -187,7 +185,7 @@ function wireAutoUpdater() {
   });
 
   autoUpdater.on("update-not-available", () => {
-    if (hasPendingUpdate(updateState.status)) {
+    if (shouldPreserveUpdateState(updateState.status)) {
       setUpdateState({
         checkedAt: new Date().toISOString(),
         errorMessage: null,
@@ -242,7 +240,7 @@ async function checkForAppUpdates() {
     return updateState;
   }
 
-  if (hasPendingUpdate(updateState.status)) {
+  if (shouldPreserveUpdateState(updateState.status)) {
     return updateState;
   }
 
