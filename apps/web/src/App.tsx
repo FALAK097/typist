@@ -1,3 +1,6 @@
+import { Check, Copy } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
 const AppleIcon = () => (
   <svg
     viewBox="0 0 384 512"
@@ -27,6 +30,16 @@ const WindowsIcon = () => (
     />
   </svg>
 );
+
+const DOWNLOAD_URLS = {
+  mac: "https://github.com/FALAK097/glyph/releases/latest/download/Glyph-mac.dmg",
+  windows: "https://github.com/FALAK097/glyph/releases/latest/download/Glyph-windows.exe",
+  releases: "https://github.com/FALAK097/glyph/releases",
+  changelog: "https://github.com/FALAK097/glyph/blob/main/CHANGELOG.md",
+  github: "https://github.com/FALAK097/glyph",
+} as const;
+
+const BREW_INSTALL_COMMAND = "brew install --cask FALAK097/glyph/glyph";
 
 type Feature = {
   eyebrow: string;
@@ -78,7 +91,7 @@ const features: Feature[] = [
   },
   {
     eyebrow: "Discovery",
-    title: "Search Everything",
+    title: "Find Notes",
     description:
       "Search all your markdown files in one place and find the exact note you need in seconds.",
     className: "md:col-span-4",
@@ -148,6 +161,69 @@ function ProductShot({ src, alt, frame = "compact" }: ProductShotProps) {
 }
 
 export function App() {
+  const [hasCopiedBrew, setHasCopiedBrew] = useState(false);
+  const [brewCopyError, setBrewCopyError] = useState(false);
+  const brewFallbackInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (!hasCopiedBrew) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setHasCopiedBrew(false);
+    }, 2200);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [hasCopiedBrew]);
+
+  useEffect(() => {
+    if (!brewCopyError) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const input = brewFallbackInputRef.current;
+      if (!input) {
+        return;
+      }
+
+      input.focus();
+      input.select();
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [brewCopyError]);
+
+  const selectBrewFallbackInput = () => {
+    const input = brewFallbackInputRef.current;
+    if (!input) {
+      return;
+    }
+
+    input.focus();
+    input.select();
+  };
+
+  const handleCopyBrewCommand = async () => {
+    try {
+      await navigator.clipboard.writeText(BREW_INSTALL_COMMAND);
+      setHasCopiedBrew(true);
+      setBrewCopyError(false);
+    } catch (error) {
+      console.error("Unable to copy Homebrew install command.", error);
+      setHasCopiedBrew(false);
+      setBrewCopyError(true);
+      window.requestAnimationFrame(() => {
+        selectBrewFallbackInput();
+      });
+    }
+  };
+
   return (
     <main className="min-h-screen bg-[var(--surface-page)] text-[var(--ink-strong)] [font-family:var(--font-sans)]">
       <a
@@ -158,24 +234,29 @@ export function App() {
       </a>
 
       <nav className="sticky top-0 z-40 border-b border-black/5 bg-[color:color-mix(in_oklab,var(--surface-page)_88%,white)]/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-screen-2xl flex-wrap items-center justify-between gap-4 px-6 py-4 sm:px-8 lg:px-12">
+        <div className="mx-auto flex max-w-screen-2xl flex-wrap items-center justify-between gap-4 px-6 sm:px-8 lg:px-12">
           <a
             href="/"
             aria-label="Glyph Home"
             className="brand-lockup rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--surface-page)]"
           >
-            <img src="/icon.png" alt="" width="238" height="218" className="brand-lockup__mark" />
-            <span className="brand-lockup__type">Glyph</span>
+            <img
+              src="/logo-wordmark-dark.png"
+              alt="Glyph"
+              width="512"
+              height="128"
+              className="brand-lockup__wordmark"
+            />
           </a>
 
           <div className="flex w-full items-center justify-center gap-2 sm:w-auto sm:justify-end">
-            <a href="https://github.com/FALAK097/glyph/releases/latest" className="download-button">
+            <a href={DOWNLOAD_URLS.mac} className="download-button cursor-pointer border-0">
               <AppleIcon />
               Download for macOS
             </a>
             <a
-              href="https://github.com/FALAK097/glyph/releases/latest"
-              className="download-button download-button--secondary"
+              href={DOWNLOAD_URLS.windows}
+              className="download-button download-button--secondary cursor-pointer border-0"
             >
               <WindowsIcon />
               Download for Windows
@@ -195,9 +276,63 @@ export function App() {
             writer.
           </h1>
           <p className="hero-body mt-7 max-w-2xl text-balance">
-            Glyph strips away digital noise, leaving only your words, your folders, and a reading
-            experience built for clarity.
+            Glyph is free to use, local-first, and built around plain markdown files. It strips away
+            digital noise, leaving only your words, your folders, and a reading experience built for
+            clarity.
           </p>
+          <div
+            id="install-with-homebrew"
+            className="mt-10 w-full max-w-3xl overflow-hidden rounded-2xl border border-black/8 bg-[color:color-mix(in_oklab,white_86%,var(--surface-paper))] text-left shadow-[0_16px_48px_-44px_oklch(0.17_0.01_110_/_0.3)]"
+          >
+            <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <code className="overflow-x-auto whitespace-nowrap text-[0.98rem] text-[var(--ink-soft)]">
+                {BREW_INSTALL_COMMAND}
+              </code>
+              <button
+                type="button"
+                className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-[0.55rem] border border-black/8 bg-[color:color-mix(in_oklab,white_92%,var(--surface-page))] px-3 py-2 text-[0.82rem] font-semibold text-[var(--ink-soft)] transition-transform duration-150 ease-out hover:-translate-y-px hover:text-[var(--ink-strong)] sm:self-auto"
+                onClick={() => void handleCopyBrewCommand()}
+              >
+                {hasCopiedBrew ? (
+                  <>
+                    <Check size={15} aria-hidden="true" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy size={15} aria-hidden="true" />
+                    Copy
+                  </>
+                )}
+              </button>
+            </div>
+            {brewCopyError ? (
+              <div className="border-t border-black/8 px-4 py-4">
+                <p className="text-[0.8rem] font-medium text-[var(--ink-soft)]">
+                  Copy failed. Click to select the command manually.
+                </p>
+                <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <input
+                    ref={brewFallbackInputRef}
+                    type="text"
+                    readOnly
+                    value={BREW_INSTALL_COMMAND}
+                    onClick={selectBrewFallbackInput}
+                    onFocus={selectBrewFallbackInput}
+                    className="min-w-0 flex-1 rounded-[0.7rem] border border-black/10 bg-white px-3 py-2 text-[0.88rem] text-[var(--ink-soft)] outline-none selection:bg-[var(--surface-strong)]/20"
+                    aria-label="Homebrew install command"
+                  />
+                  <button
+                    type="button"
+                    className="inline-flex shrink-0 cursor-pointer items-center justify-center rounded-[0.55rem] border border-black/8 bg-[color:color-mix(in_oklab,white_92%,var(--surface-page))] px-3 py-2 text-[0.8rem] font-semibold text-[var(--ink-soft)] transition-transform duration-150 ease-out hover:-translate-y-px hover:text-[var(--ink-strong)]"
+                    onClick={selectBrewFallbackInput}
+                  >
+                    Copy failed - Click to select
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </div>
         </div>
       </header>
 
@@ -213,41 +348,76 @@ export function App() {
                   feature.compactHeight ? "feature-card--compact" : ""
                 } ${feature.emphasis === "media" ? "feature-card--media" : ""} flex flex-col justify-between`}
               >
-                <div className={feature.emphasis === "media" ? "max-w-none" : "max-w-md"}>
-                  <span
-                    className={`feature-card__eyebrow ${darkCard ? "feature-card__eyebrow--dark" : ""}`}
-                  >
-                    {feature.eyebrow}
-                  </span>
-                  <h2
-                    className={`feature-card__title ${darkCard ? "feature-card__title--dark" : ""} ${
-                      feature.emphasis === "media" ? "feature-card__title--media" : ""
-                    }`}
-                  >
-                    {feature.title}
-                  </h2>
-                  <p
-                    className={`feature-card__description ${
-                      darkCard ? "feature-card__description--dark" : ""
-                    } ${feature.emphasis === "media" ? "feature-card__description--media" : ""}`}
-                  >
-                    {feature.title === "Open Source" ? (
-                      <>
-                        <a
-                          href="https://github.com/FALAK097/glyph"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="footer-link"
-                        >
-                          Glyph
-                        </a>{" "}
-                        is transparent and community-friendly. Inspect the code, contribute
-                        improvements, or adapt it to your workflow.
-                      </>
-                    ) : (
-                      feature.description
-                    )}
-                  </p>
+                <div
+                  className={
+                    feature.themes
+                      ? "flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-12"
+                      : feature.emphasis === "media"
+                        ? "max-w-none"
+                        : "max-w-md"
+                  }
+                >
+                  <div className={feature.themes ? "max-w-[44rem]" : undefined}>
+                    <span
+                      className={`feature-card__eyebrow ${darkCard ? "feature-card__eyebrow--dark" : ""}`}
+                    >
+                      {feature.eyebrow}
+                    </span>
+                    <h2
+                      className={`feature-card__title ${darkCard ? "feature-card__title--dark" : ""} ${
+                        feature.emphasis === "media" ? "feature-card__title--media" : ""
+                      } ${
+                        feature.title === "Find Notes" || feature.themes
+                          ? "lg:whitespace-nowrap"
+                          : ""
+                      }`}
+                    >
+                      {feature.title}
+                    </h2>
+                    <p
+                      className={`feature-card__description ${
+                        darkCard ? "feature-card__description--dark" : ""
+                      } ${feature.emphasis === "media" ? "feature-card__description--media" : ""}`}
+                    >
+                      {feature.title === "Open Source" ? (
+                        <>
+                          <a
+                            href={DOWNLOAD_URLS.github}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="footer-link"
+                          >
+                            Glyph
+                          </a>{" "}
+                          is transparent and community-friendly. Inspect the code, contribute
+                          improvements, or adapt it to your workflow.
+                        </>
+                      ) : (
+                        feature.description
+                      )}
+                    </p>
+                  </div>
+
+                  {feature.themes ? (
+                    <div className="hidden w-full max-w-[20rem] lg:mt-6 lg:block">
+                      <div className="rounded-[1.35rem] border border-black/8 bg-white/70 p-5 shadow-[0_10px_30px_-28px_oklch(0.18_0.01_110_/_0.28)]">
+                        <span className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[var(--ink-muted)]">
+                          Theme Mode
+                        </span>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <span className="rounded-full border border-black/8 bg-white px-3 py-1.5 text-[0.74rem] font-medium text-[var(--ink-strong)]">
+                            Light
+                          </span>
+                          <span className="rounded-full border border-black/8 bg-[var(--surface-strong)] px-3 py-1.5 text-[0.74rem] font-medium text-[var(--ink-inverse)]">
+                            Dark
+                          </span>
+                          <span className="rounded-full border border-black/8 bg-[color:color-mix(in_oklab,white_88%,var(--surface-page))] px-3 py-1.5 text-[0.74rem] font-medium text-[var(--ink-soft)]">
+                            System
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
 
                 {feature.image ? (
@@ -261,7 +431,7 @@ export function App() {
                 ) : null}
 
                 {feature.themes ? (
-                  <div className="mt-12 grid gap-5 sm:grid-cols-2">
+                  <div className="mt-8 grid gap-5 sm:grid-cols-2">
                     <ProductShot
                       src="/light-theme.png"
                       alt="Glyph light theme preview"
@@ -301,6 +471,15 @@ export function App() {
               className="footer-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--surface-page)]"
             >
               GitHub
+            </a>
+            <span className="px-2 text-black/25">·</span>
+            <a
+              href={DOWNLOAD_URLS.changelog}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="footer-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--surface-page)]"
+            >
+              Changelog
             </a>
           </p>
         </div>

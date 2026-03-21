@@ -41,23 +41,14 @@ body {
 .brand-lockup {
   display: inline-flex;
   align-items: center;
-  gap: 0.8rem;
   color: var(--ink-strong);
   text-decoration: none;
 }
 
-.brand-lockup__mark {
-  width: 1.9rem;
+.brand-lockup__wordmark {
+  width: clamp(7.25rem, 6.8rem + 0.9vw, 8.4rem);
   height: auto;
-  filter: drop-shadow(0 12px 22px oklch(0.5 0.08 290 / 0.12));
-}
-
-.brand-lockup__type {
-  font-family: var(--font-display);
-  font-size: clamp(1.55rem, 1.3rem + 0.8vw, 2rem);
-  font-weight: 600;
-  letter-spacing: -0.04em;
-  line-height: 0.95;
+  display: block;
 }
 
 .download-button {
@@ -253,8 +244,8 @@ body {
 }
 
 @media (max-width: 640px) {
-  .brand-lockup__type {
-    font-size: 1.72rem;
+  .brand-lockup__wordmark {
+    width: 7rem;
   }
 
   .download-button {

@@ -137,6 +137,10 @@ function normalizeReleaseNotes(
   return null;
 }
 
+function shouldPreserveUpdateState(updateStatus: UpdateState["status"]) {
+  return updateStatus === "downloading" || updateStatus === "downloaded";
+}
+
 function wireAutoUpdater() {
   if (!app.isPackaged || isDev) {
     setUpdateState({
@@ -151,6 +155,14 @@ function wireAutoUpdater() {
   autoUpdater.autoInstallOnAppQuit = true;
 
   autoUpdater.on("checking-for-update", () => {
+    if (shouldPreserveUpdateState(updateState.status)) {
+      setUpdateState({
+        checkedAt: new Date().toISOString(),
+        errorMessage: null,
+      });
+      return;
+    }
+
     setUpdateState({
       status: "checking",
       checkedAt: new Date().toISOString(),
@@ -173,6 +185,14 @@ function wireAutoUpdater() {
   });
 
   autoUpdater.on("update-not-available", () => {
+    if (shouldPreserveUpdateState(updateState.status)) {
+      setUpdateState({
+        checkedAt: new Date().toISOString(),
+        errorMessage: null,
+      });
+      return;
+    }
+
     setUpdateState({
       status: "not-available",
       availableVersion: null,
@@ -217,6 +237,10 @@ function wireAutoUpdater() {
 
 async function checkForAppUpdates() {
   if (!app.isPackaged || isDev) {
+    return updateState;
+  }
+
+  if (shouldPreserveUpdateState(updateState.status)) {
     return updateState;
   }
 

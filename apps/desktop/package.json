@@ -106,7 +106,7 @@
       ]
     },
     "dmg": {
-      "artifactName": "Glyph-${version}-mac.${ext}"
+      "artifactName": "Glyph-mac.${ext}"
     },
     "win": {
       "icon": "public/icon.ico",
@@ -123,7 +123,7 @@
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "artifactName": "Glyph-${version}-windows.${ext}"
+      "artifactName": "Glyph-windows.${ext}"
     },
     "publish": [
       {

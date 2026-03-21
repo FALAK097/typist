@@ -59,7 +59,7 @@ jobs:
 
       - name: Resolve macOS artifact name
         run: |
-          artifact_name=$(node -e 'const fs = require("node:fs"); const pkg = JSON.parse(fs.readFileSync("apps/desktop/package.json", "utf8")); const version = process.env.RELEASE_TAG.replace(/^v/, ""); const template = pkg.build?.dmg?.artifactName ?? "Glyph-${version}-mac.${ext}"; process.stdout.write(template.replace("${version}", version).replace("${ext}", "dmg"));')
+          artifact_name=$(node -e 'const fs = require("node:fs"); const pkg = JSON.parse(fs.readFileSync("apps/desktop/package.json", "utf8")); const version = process.env.RELEASE_TAG.replace(/^v/, ""); const template = pkg.build?.dmg?.artifactName ?? "Glyph-mac.${ext}"; process.stdout.write(template.replace("${version}", version).replace("${ext}", "dmg"));')
           echo "MAC_DMG_NAME=${artifact_name}" >> "$GITHUB_ENV"
 
       - name: Download existing macOS release artifact

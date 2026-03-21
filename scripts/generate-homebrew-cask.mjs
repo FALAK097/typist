@@ -109,7 +109,7 @@ function main() {
 
   const artifactName =
     getArgValue("--artifact-name") ??
-    (artifactPath ? path.basename(artifactPath) : `${productName}-${version}-mac.dmg`);
+    (artifactPath ? path.basename(artifactPath) : `${productName}-mac.dmg`);
 
   const sha256 = explicitSha256 ?? hashFile(artifactPath);
   const artifactNameTemplate = getArtifactNameTemplate(artifactName, version);
