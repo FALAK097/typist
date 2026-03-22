@@ -206,11 +206,11 @@ export const SidebarTreeNode = memo(function SidebarTreeNode({
   if (node.type === "directory") {
     return (
       <div
-        className={`relative mb-1 rounded-xl border border-transparent transition-all duration-150 ease-out ${containerClassName}`}
+        className={`relative mb-1 rounded-xl border border-transparent transition-[background-color,border-color,color,box-shadow,transform] duration-200 ease-out ${containerClassName}`}
         {...dragHandlers}
       >
         <div
-          className="group/folder-row mx-1 flex min-w-0 items-center rounded-lg border border-transparent text-sidebar-foreground transition-all duration-150 ease-out hover:border-sidebar-accent/20 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground focus-within:border-sidebar-accent/30 focus-within:bg-sidebar-accent/50"
+          className="group/folder-row mx-1 flex min-w-0 items-center rounded-lg border border-transparent text-sidebar-foreground transition-[background-color,border-color,color] duration-150 ease-out hover:border-sidebar-accent/20 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground focus-within:border-sidebar-accent/30 focus-within:bg-sidebar-accent/50"
           style={{
             paddingLeft: `${depth * 14 + 6}px`,
             paddingRight: "4px",
@@ -237,11 +237,11 @@ export const SidebarTreeNode = memo(function SidebarTreeNode({
             <span className="relative flex h-4 w-4 shrink-0 items-center justify-center text-muted-foreground">
               <FolderIcon
                 size={14}
-                className="transition-all duration-150 ease-out group-hover/folder-row:scale-90 group-hover/folder-row:opacity-0 group-hover/folder-row:text-sidebar-accent-foreground/75"
+                className="transition-[transform,opacity,color] duration-200 ease-out group-hover/folder-row:scale-90 group-hover/folder-row:opacity-0 group-hover/folder-row:text-sidebar-accent-foreground/75"
               />
               <ChevronRightIcon
                 size={12}
-                className={`absolute opacity-0 transition-all duration-150 ease-out group-hover/folder-row:opacity-100 ${
+                className={`absolute opacity-0 transition-[transform,opacity,color] duration-200 ease-out group-hover/folder-row:opacity-100 ${
                   isFolderExpanded ? "rotate-90" : ""
                 }`}
               />
@@ -356,7 +356,7 @@ export const SidebarTreeNode = memo(function SidebarTreeNode({
 
   return (
     <div
-      className={`group/file-row relative mb-0.5 flex min-w-0 items-center overflow-hidden rounded-xl border border-transparent transition-all duration-150 ease-out ${containerClassName}`}
+      className={`group/file-row relative mb-0.5 flex min-w-0 items-center overflow-hidden rounded-xl border border-transparent transition-[background-color,border-color,color,box-shadow,transform] duration-200 ease-out active:scale-[0.98] ${containerClassName}`}
       {...dragHandlers}
     >
       <div

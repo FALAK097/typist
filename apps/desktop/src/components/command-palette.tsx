@@ -147,7 +147,8 @@ export const CommandPalette = ({
                         }}
                         className={`
                           h-auto w-full px-3 py-2.5 rounded-sm text-sm
-                          transition-all duration-100 flex items-center justify-between
+                          transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.98]
+                          flex items-center justify-between
                           ${
                             selectedIndex === index
                               ? "bg-accent/10 text-foreground"

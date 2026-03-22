@@ -42,6 +42,7 @@ import {
   DotsHorizontalIcon,
   ExternalLinkIcon,
   FileDownIcon,
+  FocusIcon,
   GearIcon,
   LinkIcon,
   PanelLeftIcon,
@@ -49,6 +50,7 @@ import {
   PinIcon,
   PinOffIcon,
   PlusIcon,
+  ReadingModeIcon,
   RevealInFolderIcon,
   SearchIcon,
   TrashIcon,
@@ -1195,30 +1197,48 @@ export const MarkdownEditor = ({
         {/* Right: actions */}
         <div className="flex items-center gap-1 relative flex-shrink-0">
           {modeButtonsVisible ? (
-            <div className="flex items-center gap-1 rounded-full border border-border/60 bg-muted/35 p-1 shadow-sm">
+            <div className="flex items-center gap-0.5 relative after:absolute after:right-0 after:-mr-1.5 after:h-4 after:w-px after:bg-border/50 pr-2.5 mr-1">
               {onToggleFocusMode ? (
-                <Button
-                  variant={isFocusLayout ? "secondary" : "ghost"}
-                  size="sm"
-                  className="h-8 rounded-full px-3 text-xs font-semibold"
-                  onClick={onToggleFocusMode}
-                  aria-pressed={isFocusLayout}
-                  type="button"
-                >
-                  Focus
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className={`text-muted-foreground transition-colors ${
+                        isFocusLayout ? "bg-muted text-foreground" : "hover:text-foreground hover:bg-muted"
+                      }`}
+                      onClick={onToggleFocusMode}
+                      aria-pressed={isFocusLayout}
+                      type="button"
+                    >
+                      <FocusIcon size={16} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {isFocusLayout ? "Exit Focus Mode" : "Enter Focus Mode"}
+                  </TooltipContent>
+                </Tooltip>
               ) : null}
               {onToggleReadingMode ? (
-                <Button
-                  variant={isReadingLayout ? "secondary" : "ghost"}
-                  size="sm"
-                  className="h-8 rounded-full px-3 text-xs font-semibold"
-                  onClick={onToggleReadingMode}
-                  aria-pressed={isReadingLayout}
-                  type="button"
-                >
-                  Reading
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className={`text-muted-foreground transition-colors ${
+                        isReadingLayout ? "bg-muted text-foreground" : "hover:text-foreground hover:bg-muted"
+                      }`}
+                      onClick={onToggleReadingMode}
+                      aria-pressed={isReadingLayout}
+                      type="button"
+                    >
+                      <ReadingModeIcon size={16} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {isReadingLayout ? "Exit Reading Mode" : "Enter Reading Mode"}
+                  </TooltipContent>
+                </Tooltip>
               ) : null}
             </div>
           ) : null}
@@ -1528,7 +1548,7 @@ export const MarkdownEditor = ({
         <EditorContent editor={editor} />
       </div>
       {shouldShowOutlineRail ? (
-        <aside className="pointer-events-none absolute right-4 top-[72px] z-20 hidden xl:block w-[290px]">
+        <aside className="pointer-events-none absolute right-4 top-[72px] z-20 hidden xl:block w-[290px] animate-in fade-in slide-in-from-right-2 duration-200 ease-out">
           <div className="pointer-events-auto flex min-h-0 flex-col rounded-2xl border border-border/60 bg-card/95 p-4 shadow-lg backdrop-blur-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -1537,7 +1557,7 @@ export const MarkdownEditor = ({
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">{outlineItems.length} headings</p>
               </div>
-              <Button variant="ghost" size="xs" type="button" onClick={handleScrollToTop}>
+              <Button variant="ghost" size="xs" type="button" onClick={handleScrollToTop} className="transition-transform active:scale-[0.95]">
                 Top
               </Button>
             </div>
@@ -1554,7 +1574,7 @@ export const MarkdownEditor = ({
                       variant="ghost"
                       size="sm"
                       type="button"
-                      className="h-auto w-full justify-start rounded-xl px-3 py-2 text-left text-sm text-foreground hover:bg-muted/70"
+                      className="h-auto w-full justify-start rounded-xl px-3 py-2 text-left text-sm text-foreground hover:bg-muted/70 transition-transform active:scale-[0.98]"
                       style={outlineIndentStyles[item.depth]}
                       onClick={() => handleJumpToHeading(item)}
                     >

@@ -5,6 +5,7 @@ import {
   ArrowRight01Icon as ArrowRight01Svg,
   ArrowUp01Icon as ArrowUp01Svg,
   ArrowDown01Icon as ArrowDown01Svg,
+  BookOpen01Icon as BookOpen01Svg,
   Cancel01Icon as Cancel01Svg,
   CheckmarkCircle01Icon as CheckmarkCircle01Svg,
   CopyIcon as CopySvg,
@@ -16,6 +17,8 @@ import {
   KeyboardIcon as KeyboardSvg,
   Link01Icon as Link01Svg,
   LinkSquare01Icon as LinkSquare01Svg,
+  ListViewIcon as ListViewSvg,
+  Maximize01Icon as Maximize01Svg,
   MoreHorizontalIcon as MoreHorizontalSvg,
   MoreVerticalIcon as MoreVerticalSvg,
   PanelLeftIcon as HugePanelLeftIcon,
@@ -25,6 +28,7 @@ import {
   PencilEdit02Icon as PencilEdit02Svg,
   Search01Icon as Search01Svg,
   Settings01Icon as Settings01Svg,
+  StarIcon as StarSvg,
   UnfoldMoreIcon as UnfoldMoreSvg,
   Tick02Icon as Tick02Svg,
 } from "@hugeicons/core-free-icons";
@@ -42,12 +46,6 @@ const HugeIcon = ({ icon, size, className, color, strokeWidth }: HugeIconProps) 
     />
   );
 };
-
-const getSvgProps = ({ size = 16, className, color = "currentColor" }: IconProps) => ({
-  size,
-  className,
-  color,
-});
 
 export const ChevronRightIcon = (props: IconProps) => (
   <HugeIcon icon={ArrowRight01Svg} {...props} />
@@ -94,93 +92,10 @@ export const XIcon = (props: IconProps) => <HugeIcon icon={Cancel01Svg} {...prop
 export const PinIcon = (props: IconProps) => <HugeIcon icon={HugePinIcon} {...props} />;
 export const PinOffIcon = (props: IconProps) => <HugeIcon icon={HugePinOffIcon} {...props} />;
 
-export const StarIcon = (props: IconProps) => {
-  const svg = getSvgProps(props);
-  return (
-    <svg
-      width={svg.size}
-      height={svg.size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={svg.color}
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={svg.className}
-      aria-hidden="true"
-    >
-      <path d="m12 3.8 2.5 5.08 5.6.82-4.05 3.95.96 5.58L12 16.6l-5.01 2.63.96-5.58L3.9 9.7l5.6-.82L12 3.8Z" />
-    </svg>
-  );
-};
-
-export const FocusIcon = (props: IconProps) => {
-  const svg = getSvgProps(props);
-  return (
-    <svg
-      width={svg.size}
-      height={svg.size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={svg.color}
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={svg.className}
-      aria-hidden="true"
-    >
-      <path d="M4 9V5h4" />
-      <path d="M20 9V5h-4" />
-      <path d="M4 15v4h4" />
-      <path d="M20 15v4h-4" />
-      <circle cx="12" cy="12" r="3.25" />
-    </svg>
-  );
-};
-
-export const ReadingModeIcon = (props: IconProps) => {
-  const svg = getSvgProps(props);
-  return (
-    <svg
-      width={svg.size}
-      height={svg.size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={svg.color}
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={svg.className}
-      aria-hidden="true"
-    >
-      <path d="M5 5.5h6.5A3.5 3.5 0 0 1 15 9v9.5H8.5A3.5 3.5 0 0 0 5 22V5.5Z" />
-      <path d="M19 5.5h-6.5A3.5 3.5 0 0 0 9 9v9.5h6.5A3.5 3.5 0 0 1 19 22V5.5Z" />
-    </svg>
-  );
-};
-
-export const OutlineIcon = (props: IconProps) => {
-  const svg = getSvgProps(props);
-  return (
-    <svg
-      width={svg.size}
-      height={svg.size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={svg.color}
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={svg.className}
-      aria-hidden="true"
-    >
-      <path d="M5 6h14" />
-      <path d="M5 12h6" />
-      <path d="M5 18h10" />
-      <path d="M15 11.5h4v7h-4z" />
-    </svg>
-  );
-};
+export const StarIcon = (props: IconProps) => <HugeIcon icon={StarSvg} {...props} />;
+export const FocusIcon = (props: IconProps) => <HugeIcon icon={Maximize01Svg} {...props} />;
+export const ReadingModeIcon = (props: IconProps) => <HugeIcon icon={BookOpen01Svg} {...props} />;
+export const OutlineIcon = (props: IconProps) => <HugeIcon icon={ListViewSvg} {...props} />;
 
 const glyphLogoMarkSrc = `${import.meta.env.BASE_URL}icon.png`;
 

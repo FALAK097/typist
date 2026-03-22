@@ -126,7 +126,7 @@ const SidebarShortcutRow = memo(function SidebarShortcutRow({
 
   return (
     <div
-      className={`group/shortcut relative mb-1 flex items-center overflow-hidden rounded-xl border border-transparent transition-all duration-150 ease-out ${
+      className={`group/shortcut relative mb-1 flex items-center overflow-hidden rounded-xl border border-transparent transition-[background-color,border-color,color,box-shadow,transform] duration-200 ease-out active:scale-[0.98] ${
         isActive
           ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm ring-1 ring-sidebar-accent/30"
           : "text-sidebar-foreground hover:border-sidebar-accent/20 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
