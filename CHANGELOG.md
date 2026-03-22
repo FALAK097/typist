@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.2.5](https://github.com/FALAK097/glyph/compare/v0.2.4...v0.2.5) (2026-03-22)
+
+
+### Bug Fixes
+
+* **desktop:** keep downloaded updates staged until install ([#122](https://github.com/FALAK097/glyph/issues/122)) ([84a9b7f](https://github.com/FALAK097/glyph/commit/84a9b7f831fad2b3274a82e7ea09014ea438ec71))
+
+## [0.2.4](https://github.com/FALAK097/glyph/compare/v0.2.3...v0.2.4) (2026-03-22)
+
+
+### Features
+
+* **web:** improve release downloads and install guidance with direct platform download links and a Homebrew install callout ([#11](https://github.com/FALAK097/glyph/issues/11)) ([f6b00d4](https://github.com/FALAK097/glyph/commit/f6b00d4e48515154063248d2e53c7fbfeab2f91b))
+
+
+### Bug Fixes
+
+* **desktop:** keep long sidebars scrollable, clean up link hover affordances, and show table controls only while editing a table ([#119](https://github.com/FALAK097/glyph/issues/119)) ([4152691](https://github.com/FALAK097/glyph/commit/4152691102d72ad7bfac978f702018e02c56ca32))
+* **release:** keep release-please automation flowing ([#120](https://github.com/FALAK097/glyph/issues/120)) ([d38f1d4](https://github.com/FALAK097/glyph/commit/d38f1d465f91bf73f38dcfc93e3ba4f92b083d7d))
+
+
+### Miscellaneous Chores
+
+* add pre-commit quality checks for formatting, linting, and typechecking before each commit ([#118](https://github.com/FALAK097/glyph/issues/118)) ([3be90b8](https://github.com/FALAK097/glyph/commit/3be90b82ccd9759d6b66a7a14563f3cf9db7d5f4))
+
 ## [0.2.3](https://github.com/FALAK097/glyph/compare/v0.2.2...v0.2.3) (2026-03-21)
 
 

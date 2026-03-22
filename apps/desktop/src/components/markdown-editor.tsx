@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, MutableRefObject } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { MutableRefObject } from "react";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -14,7 +14,7 @@ import type { Editor } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { Markdown } from "tiptap-markdown";
 
-import { buildBreadcrumbs, createHeadingId } from "@/lib/note-navigation";
+import { createHeadingId } from "@/lib/note-navigation";
 import { getFolderRevealLabel } from "@/lib/platform";
 
 import { CustomCodeBlockLowlight } from "./tiptap-extension/code-block-lowlight";
@@ -35,13 +35,11 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 import { SlashCommand } from "./slash-command";
 import { TableOfContents } from "./table-of-contents";
 import {
-  ArrowUpIcon,
   ArrowLeftIcon,
   ArrowRightIcon,
   CheckCircleIcon,
   CopyIcon,
   DotsHorizontalIcon,
-  ExternalLinkIcon,
   FileDownIcon,
   FocusIcon,
   GearIcon,
@@ -58,7 +56,7 @@ import {
 } from "./icons";
 
 import type { MarkdownEditorProps, MarkdownEditorToast } from "../types/markdown-editor";
-import type { BreadcrumbItem, OutlineItem } from "@/types/navigation";
+import type { OutlineItem } from "@/types/navigation";
 import type { UpdateState } from "../shared/workspace";
 
 const LINK_IMAGE_PATTERN = /(!?)\[([^\]]+)\]\(([^)]+)\)$/;
@@ -142,9 +140,6 @@ const getDevPreviewUpdateState = (): UpdateState | null => {
 };
 
 type HoveredLinkState = {
-  href: string;
-  iconLeft: number;
-  iconTop: number;
   tooltipLeft: number;
   tooltipTop: number;
 };
@@ -236,6 +231,13 @@ function collectEditorOutline(editor: Editor): EditorOutlineItem[] {
   return items;
 }
 
+const INACTIVE_TABLE_CONTROLS: TableControlsState = {
+  active: false,
+  canDeleteRow: false,
+  canDeleteColumn: false,
+  canDeleteTable: false,
+};
+
 const runMarkdownShortcutConversion = (
   nextEditor: Editor,
   isAutoConvertingRef: MutableRefObject<boolean>,
@@ -299,8 +301,6 @@ export const MarkdownEditor = ({
   content,
   fileName,
   filePath,
-  workspaceRootPath,
-  breadcrumbs,
   saveStateLabel,
   wordCount,
   readingTime,
@@ -321,11 +321,9 @@ export const MarkdownEditor = ({
   canGoBack,
   canGoForward,
   autoOpenPDFSetting,
-  isActiveFileFavorite,
   isActiveFilePinned,
   nextHistoryItem,
   onOutlineJumpHandled,
-  onToggleFavoriteFile,
   updateState,
   onUpdateAction,
   isFocusMode,
@@ -343,12 +341,7 @@ export const MarkdownEditor = ({
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const noteViewStateRef = useRef(new Map<string, NoteViewState>());
   const previousFilePathRef = useRef<string | null>(filePath);
-  const tableControlsRef = useRef<TableControlsState>({
-    active: false,
-    canDeleteRow: false,
-    canDeleteColumn: false,
-    canDeleteTable: false,
-  });
+  const tableControlsRef = useRef<TableControlsState>(INACTIVE_TABLE_CONTROLS);
   const toastTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
   const hoveredLinkHideTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -368,12 +361,7 @@ export const MarkdownEditor = ({
   });
   const [imageControls, setImageControls] = useState<ImageControlsState | null>(null);
   const [hoveredLink, setHoveredLink] = useState<HoveredLinkState | null>(null);
-  const [tableControls, setTableControls] = useState<TableControlsState>({
-    active: false,
-    canDeleteRow: false,
-    canDeleteColumn: false,
-    canDeleteTable: false,
-  });
+  const [tableControls, setTableControls] = useState<TableControlsState>(INACTIVE_TABLE_CONTROLS);
   const [devPreviewUpdateState] = useState<UpdateState | null>(() => getDevPreviewUpdateState());
   const [outlineItems, setOutlineItems] = useState<EditorOutlineItem[]>([]);
   const [activeHeadingId, setActiveHeadingId] = useState<string | null>(null);
@@ -400,14 +388,6 @@ export const MarkdownEditor = ({
         : "Update available";
 
   const isUpdateButtonDisabled = effectiveUpdateState?.status === "downloading";
-  const resolvedBreadcrumbs = useMemo<BreadcrumbItem[]>(
-    () => breadcrumbs ?? buildBreadcrumbs(filePath, workspaceRootPath ?? null),
-    [breadcrumbs, filePath, workspaceRootPath],
-  );
-  const breadcrumbTrail = useMemo(
-    () => resolvedBreadcrumbs.slice(0, Math.max(0, resolvedBreadcrumbs.length - 1)),
-    [resolvedBreadcrumbs],
-  );
   const isFocusLayout = Boolean(isFocusMode);
   const revealInFolderLabel = folderRevealLabel ?? getFolderRevealLabel(navigator.platform);
   const editorSurfaceClassName = [
@@ -460,17 +440,17 @@ export const MarkdownEditor = ({
 
     const nodeDom = nextEditor.view.nodeDOM(item.pos - 1);
     const container = scrollContainerRef.current;
-    
+
     if (nodeDom instanceof HTMLElement && container) {
       const containerRect = container.getBoundingClientRect();
       const nodeRect = nodeDom.getBoundingClientRect();
-      
+
       const targetScrollTop = container.scrollTop + (nodeRect.top - containerRect.top) - 40;
       container.scrollTo({ top: targetScrollTop, behavior: "smooth" });
     } else {
       nextEditor.chain().focus().setTextSelection(item.pos).scrollIntoView().run();
     }
-    
+
     nextEditor.chain().focus().setTextSelection(item.pos).run();
   }, []);
 
@@ -512,14 +492,6 @@ export const MarkdownEditor = ({
 
     return true;
   }, []);
-
-  const handleScrollToTop = useCallback(() => {
-    scrollContainerRef.current?.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-  }, []);
-
   const clearHoveredLinkHideTimeout = () => {
     if (!hoveredLinkHideTimeoutRef.current) {
       return;
@@ -612,8 +584,44 @@ export const MarkdownEditor = ({
   };
 
   const refreshTableControls = (nextEditor: Editor) => {
+    const selectionIncludesTable = [
+      nextEditor.state.selection.$anchor,
+      nextEditor.state.selection.$head,
+    ].some(($position) => {
+      for (let depth = $position.depth; depth >= 0; depth -= 1) {
+        const nodeName = $position.node(depth).type.name;
+        if (
+          nodeName === "table" ||
+          nodeName === "tableRow" ||
+          nodeName === "tableCell" ||
+          nodeName === "tableHeader"
+        ) {
+          return true;
+        }
+      }
+
+      return false;
+    });
+
+    if (
+      !nextEditor.isFocused ||
+      !selectionIncludesTable ||
+      (!nextEditor.isActive("table") &&
+        !nextEditor.isActive("tableCell") &&
+        !nextEditor.isActive("tableHeader"))
+    ) {
+      const currentState = tableControlsRef.current;
+      if (!currentState.active) {
+        return;
+      }
+
+      tableControlsRef.current = INACTIVE_TABLE_CONTROLS;
+      setTableControls(INACTIVE_TABLE_CONTROLS);
+      return;
+    }
+
     const nextState = {
-      active: nextEditor.isActive("table"),
+      active: true,
       canDeleteRow: nextEditor.can().deleteRow(),
       canDeleteColumn: nextEditor.can().deleteColumn(),
       canDeleteTable: nextEditor.can().deleteTable(),
@@ -731,23 +739,18 @@ export const MarkdownEditor = ({
           clearHoveredLinkHideTimeout();
           const rect = link.getBoundingClientRect();
           setHoveredLink({
-            href,
-            iconLeft: rect.right + 4,
-            iconTop: rect.top + rect.height / 2,
             tooltipLeft: clamp(rect.left + rect.width / 2, 96, window.innerWidth - 96),
             tooltipTop: rect.bottom + 10,
           });
           return false;
         },
-        mouseout: (_view, event) => {
-          const nextTarget =
-            event.relatedTarget instanceof HTMLElement ? event.relatedTarget : null;
-
-          if (nextTarget?.closest("[data-link-hover-affordance='true']")) {
-            return false;
-          }
-
+        mouseout: (_view, _event) => {
           scheduleHoveredLinkHide();
+          return false;
+        },
+        blur: () => {
+          tableControlsRef.current = INACTIVE_TABLE_CONTROLS;
+          setTableControls(INACTIVE_TABLE_CONTROLS);
           return false;
         },
         scroll: () => {
@@ -781,7 +784,6 @@ export const MarkdownEditor = ({
       storeNoteViewState(filePath);
     },
   });
-
 
   useEffect(() => {
     if (!editor || content === lastSyncedMarkdown.current) {
@@ -1060,11 +1062,11 @@ export const MarkdownEditor = ({
 
   const isMacLike = navigator.platform.includes("Mac");
   const linkOpenShortcutHint = isMacLike ? "Open link (Cmd+Click)" : "Open link (Ctrl+Click)";
-  const headerPaddingClass = (isSidebarCollapsed || isFocusLayout) && isMacLike ? "pl-20 pr-4" : "px-4";
+  const headerPaddingClass =
+    (isSidebarCollapsed || isFocusLayout) && isMacLike ? "pl-20 pr-4" : "px-4";
   const shouldShowOutlineRail = !isFocusLayout && showOutline;
   const shouldShowCommandPalette = Boolean(onOpenCommandPalette);
   const modeButtonsVisible = Boolean(onToggleFocusMode);
-  const breadcrumbContext = breadcrumbTrail.map((item) => item.label).join(" / ");
   const backTooltipLabel = previousHistoryItem
     ? `Back to ${previousHistoryItem.title} (${navigateBackShortcut ?? "⌘["})`
     : `Back (${navigateBackShortcut ?? "⌘["})`;
@@ -1145,7 +1147,6 @@ export const MarkdownEditor = ({
           </Tooltip>
           {fileName ? (
             <div className="flex min-w-0 flex-col justify-center gap-0.5 pl-1">
-
               <span
                 className="max-w-[220px] truncate text-sm font-medium text-foreground"
                 title={filePath ?? fileName}
@@ -1198,11 +1199,11 @@ export const MarkdownEditor = ({
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
-                    {isFocusLayout ? "Exit Focus Mode" : "Enter Focus Mode"}{focusModeShortcut ? ` (${focusModeShortcut})` : ""}
+                    {isFocusLayout ? "Exit Focus Mode" : "Enter Focus Mode"}
+                    {focusModeShortcut ? ` (${focusModeShortcut})` : ""}
                   </TooltipContent>
                 </Tooltip>
               ) : null}
-
             </div>
           ) : null}
           {shouldShowUpdateButton && onUpdateAction ? (
@@ -1369,7 +1370,8 @@ export const MarkdownEditor = ({
           }
 
           const containerRect = container.getBoundingClientRect();
-          const remainingScroll = container.scrollHeight - container.scrollTop - container.clientHeight;
+          const remainingScroll =
+            container.scrollHeight - container.scrollTop - container.clientHeight;
 
           let activeId = headings[0].id;
           for (const heading of headings) {
@@ -1384,117 +1386,102 @@ export const MarkdownEditor = ({
               }
             }
           }
-          
+
           // When near the bottom of the document, activate the last heading.
           // Use a generous threshold to account for bottom padding (pb-32 = 128px),
           // sub-pixel rounding on high-DPI displays, and floating footer overlays.
           if (remainingScroll < 150) {
             activeId = headings[headings.length - 1].id;
           }
-          
+
           setActiveHeadingId(activeId);
         }}
       >
         {tableControls.active ? (
-          <div className="sticky top-0 z-20 h-0 overflow-visible">
-            <div className={`pointer-events-none flex justify-end pt-4 ${shouldShowOutlineRail ? "xl:pr-[316px]" : "pr-6"}`}>
-              <div className="pointer-events-auto flex flex-wrap items-center gap-2 rounded-2xl border border-border/70 bg-card/95 px-3 py-2 shadow-lg supports-backdrop-filter:backdrop-blur-sm">
-              <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                Table
-              </span>
-              <Button
-                variant="outline"
-                size="xs"
-                type="button"
-                onClick={() => editor?.chain().focus().addRowAfter().run()}
-              >
-                Add Row
-              </Button>
-              <Button
-                variant="outline"
-                size="xs"
-                type="button"
-                onClick={() => editor?.chain().focus().addColumnAfter().run()}
-              >
-                Add Column
-              </Button>
-              <Button
-                variant="outline"
-                size="xs"
-                type="button"
-                disabled={!tableControls.canDeleteRow}
-                onClick={() => editor?.chain().focus().deleteRow().run()}
-              >
-                Remove Row
-              </Button>
-              <Button
-                variant="outline"
-                size="xs"
-                type="button"
-                disabled={!tableControls.canDeleteColumn}
-                onClick={() => editor?.chain().focus().deleteColumn().run()}
-              >
-                Remove Column
-              </Button>
-              <Button
-                variant="outline"
-                size="xs"
-                type="button"
-                onClick={() => editor?.chain().focus().toggleHeaderRow().run()}
-              >
-                Toggle Header
-              </Button>
-              <Button
-                variant="destructive"
-                size="xs"
-                type="button"
-                disabled={!tableControls.canDeleteTable}
-                onClick={() => editor?.chain().focus().deleteTable().run()}
-              >
-                Delete Table
-              </Button>
+          <div className="sticky top-4 z-20 h-0 overflow-visible">
+            <div
+              className={`pointer-events-none flex justify-end ${
+                shouldShowOutlineRail ? "xl:pr-[316px]" : "pr-6"
+              }`}
+            >
+              <div className="pointer-events-auto flex max-w-[min(720px,calc(100vw-2rem))] flex-wrap items-center justify-center gap-2 rounded-2xl border border-border/70 bg-card/95 px-3 py-2 shadow-lg supports-backdrop-filter:backdrop-blur-sm">
+                <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                  Table
+                </span>
+                <Button
+                  variant="outline"
+                  size="xs"
+                  type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => editor?.chain().focus().addRowAfter().run()}
+                >
+                  Add Row
+                </Button>
+                <Button
+                  variant="outline"
+                  size="xs"
+                  type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => editor?.chain().focus().addColumnAfter().run()}
+                >
+                  Add Column
+                </Button>
+                <Button
+                  variant="outline"
+                  size="xs"
+                  type="button"
+                  disabled={!tableControls.canDeleteRow}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => editor?.chain().focus().deleteRow().run()}
+                >
+                  Remove Row
+                </Button>
+                <Button
+                  variant="outline"
+                  size="xs"
+                  type="button"
+                  disabled={!tableControls.canDeleteColumn}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => editor?.chain().focus().deleteColumn().run()}
+                >
+                  Remove Column
+                </Button>
+                <Button
+                  variant="outline"
+                  size="xs"
+                  type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => editor?.chain().focus().toggleHeaderRow().run()}
+                >
+                  Toggle Header
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="xs"
+                  type="button"
+                  disabled={!tableControls.canDeleteTable}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => editor?.chain().focus().deleteTable().run()}
+                >
+                  Delete Table
+                </Button>
               </div>
             </div>
           </div>
         ) : null}
         {hoveredLink ? (
-          <>
-            <div
-              className="fixed z-30"
-              data-link-hover-affordance="true"
-              onMouseEnter={clearHoveredLinkHideTimeout}
-              onMouseLeave={scheduleHoveredLinkHide}
-              style={{
-                left: hoveredLink.iconLeft,
-                top: hoveredLink.iconTop,
-                transform: "translateY(-50%)",
-              }}
-            >
-              <Button
-                data-link-hover-affordance="true"
-                variant="ghost"
-                size="icon-xs"
-                type="button"
-                className="pointer-events-auto text-[var(--editor-link)] hover:bg-transparent hover:opacity-80"
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => void handleLinkActivation(hoveredLink.href)}
-              >
-                <ExternalLinkIcon size={12} />
-              </Button>
+          <div
+            className="pointer-events-none fixed z-30"
+            style={{
+              left: hoveredLink.tooltipLeft,
+              top: hoveredLink.tooltipTop,
+              transform: "translateX(-50%)",
+            }}
+          >
+            <div className="inline-flex max-w-[220px] items-center rounded-md bg-foreground px-3 py-1.5 text-xs text-background shadow-sm">
+              {linkOpenShortcutHint}
             </div>
-            <div
-              className="pointer-events-none fixed z-30"
-              style={{
-                left: hoveredLink.tooltipLeft,
-                top: hoveredLink.tooltipTop,
-                transform: "translateX(-50%)",
-              }}
-            >
-              <div className="inline-flex max-w-[220px] items-center rounded-md bg-foreground px-3 py-1.5 text-xs text-background shadow-sm">
-                {linkOpenShortcutHint}
-              </div>
-            </div>
-          </>
+          </div>
         ) : null}
         {imageControls ? (
           <div
@@ -1523,9 +1510,7 @@ export const MarkdownEditor = ({
           <div className="pointer-events-auto flex min-h-0 flex-col">
             <div className="flex items-center gap-2 mb-4">
               <OutlineIcon size={14} className="text-muted-foreground" />
-              <p className="text-sm font-medium text-foreground">
-                On this page
-              </p>
+              <p className="text-sm font-medium text-foreground">On this page</p>
             </div>
             <div className="max-h-[calc(100vh-12rem)] overflow-y-auto pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               {outlineItems.length === 0 ? (
@@ -1533,15 +1518,17 @@ export const MarkdownEditor = ({
                   Add headings to build a table of contents.
                 </p>
               ) : (
-                <TableOfContents items={outlineItems} activeId={activeHeadingId} onJump={handleJumpToHeading} />
+                <TableOfContents
+                  items={outlineItems}
+                  activeId={activeHeadingId}
+                  onJump={handleJumpToHeading}
+                />
               )}
             </div>
           </div>
         </aside>
       ) : null}
-      <div
-        className="absolute bottom-6 right-10 flex items-center gap-3 rounded-full border border-border bg-card/80 px-3 py-1.5 shadow-sm z-30 pointer-events-none"
-      >
+      <div className="absolute bottom-6 right-10 flex items-center gap-3 rounded-full border border-border bg-card/80 px-3 py-1.5 shadow-sm z-30 pointer-events-none">
         <div className="flex items-center gap-2 text-muted-foreground text-xs">
           <span>{wordCount} words</span>
         </div>

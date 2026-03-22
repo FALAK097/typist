@@ -166,7 +166,7 @@ export const SidebarTreeNode = memo(function SidebarTreeNode({
           {content}
         </div>
       </>,
-      document.body
+      document.body,
     );
   };
 
@@ -337,7 +337,6 @@ export const SidebarTreeNode = memo(function SidebarTreeNode({
           paddingBottom: "6px",
         }}
       >
-        
         <span className="relative flex h-4 w-4 shrink-0 items-center justify-center mr-2">
           <FileIcon
             size={12}

@@ -152,7 +152,11 @@ function wireAutoUpdater() {
   }
 
   autoUpdater.autoDownload = false;
-  autoUpdater.autoInstallOnAppQuit = true;
+  // Keep the downloaded update staged until the user explicitly installs it.
+  // On macOS, enabling install-on-quit starts an extra native updater handoff
+  // immediately after download, which can emit an error and clear the install CTA
+  // before the user gets a chance to apply the update.
+  autoUpdater.autoInstallOnAppQuit = false;
 
   autoUpdater.on("checking-for-update", () => {
     if (shouldPreserveUpdateState(updateState.status)) {
@@ -545,12 +549,17 @@ function buildApplicationMenu(shortcuts: AppSettings["shortcuts"]) {
   const focusModeItem: Electron.MenuItemConstructorOptions = {
     label: "Toggle Focus Mode",
     accelerator: getAccelerator("focus-mode"),
-    click: () =>
-      mainWindow?.webContents.send("app:command", "focus-mode" satisfies AppCommand),
+    click: () => mainWindow?.webContents.send("app:command", "focus-mode" satisfies AppCommand),
   };
 
   const viewSubmenu: Electron.MenuItemConstructorOptions[] = isDev
-    ? [{ role: "reload" }, { role: "forceReload" }, { role: "toggleDevTools" }, { type: "separator" }, focusModeItem]
+    ? [
+        { role: "reload" },
+        { role: "forceReload" },
+        { role: "toggleDevTools" },
+        { type: "separator" },
+        focusModeItem,
+      ]
     : [{ role: "togglefullscreen" }, { type: "separator" }, focusModeItem];
 
   const menuTemplate: Electron.MenuItemConstructorOptions[] = [
@@ -984,10 +993,7 @@ async function collectMarkdownFiles(nodes: DirectoryNode[]): Promise<string[]> {
   return paths;
 }
 
-function getPreferredWorkspaceFilePath(
-  workspaceRoot: string,
-  filePaths: string[],
-) {
+function getPreferredWorkspaceFilePath(workspaceRoot: string, filePaths: string[]) {
   return filePaths[0] ?? null;
 }
 
@@ -998,10 +1004,7 @@ async function openWorkspace(dirPath: string): Promise<WorkspaceSnapshot> {
   const tree = await buildDirectoryTree(dirPath);
   searchableFilesCache = await collectMarkdownFiles(tree);
   const settings = await loadSettings();
-  const activeFilePath = getPreferredWorkspaceFilePath(
-    dirPath,
-    searchableFilesCache,
-  );
+  const activeFilePath = getPreferredWorkspaceFilePath(dirPath, searchableFilesCache);
   const activeFile = activeFilePath ? await readMarkdownFile(activeFilePath) : null;
 
   if (activeWatcher) {

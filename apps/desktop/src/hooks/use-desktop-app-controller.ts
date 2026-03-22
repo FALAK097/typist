@@ -104,7 +104,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
   const editorPreferences = settings?.editorPreferences;
   const isFocusMode = editorPreferences?.focusMode ?? false;
   const showOutline = editorPreferences?.showOutline ?? true;
-    const folderRevealLabel = getFolderRevealLabel(appInfo?.platform);
+  const folderRevealLabel = getFolderRevealLabel(appInfo?.platform);
   const isActiveFilePinned = activeFile
     ? (settings?.pinnedFiles ?? []).some((filePath) => isSamePath(filePath, activeFile.path))
     : false;
@@ -405,7 +405,6 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     },
     [saveSettings, settings?.pinnedFiles],
   );
-
 
   const toggleFocusMode = useCallback(async () => {
     await saveSettings({
@@ -797,9 +796,9 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
       glyph,
       isActiveFilePinned,
       isFocusMode,
-    navigateBack,
-    navigateForward,
-    toggleFocusMode,
+      navigateBack,
+      navigateForward,
+      toggleFocusMode,
       saveSettings,
       shortcuts,
       showOutline,
@@ -965,14 +964,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     });
 
     return items;
-  }, [
-    allSearchableFiles,
-    baseCommands,
-    paletteQuery,
-    openFile,
-    pinnedNotes,
-    searchResults,
-  ]);
+  }, [allSearchableFiles, baseCommands, paletteQuery, openFile, pinnedNotes, searchResults]);
 
   // Reset query when palette closes
   useEffect(() => {
@@ -1280,7 +1272,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     showOutline,
     toggleFocusMode,
     togglePinnedFile,
-        triggerUpdateAction,
+    triggerUpdateAction,
     updateState,
     updateDraftContent: handleDraftChange,
     visibleSidebarNodes,

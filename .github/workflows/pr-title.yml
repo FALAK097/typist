@@ -1,0 +1,39 @@
+name: PR Title
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+      - ready_for_review
+
+jobs:
+  conventional-pr-title:
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate PR title for release-please
+        env:
+          PR_BODY: ${{ github.event.pull_request.body || '' }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          pattern='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([[:alnum:]._/-]+\))?!?: .+'
+
+          if [[ "$PR_TITLE" =~ $pattern ]]; then
+            exit 0
+          fi
+
+          suggested_title=$(printf '%s\n' "$PR_BODY" | sed -nE 's/^[Rr]elease-[Pp]lease:[[:space:]]*(.+)$/\1/p' | head -n 1)
+
+          if [[ -n "$suggested_title" && "$suggested_title" =~ $pattern ]]; then
+            echo "::error title=Conventional PR title required::Release Please parses the squash-merge commit title from the PR title. Rename this PR to '$suggested_title' so the release workflow can pick it up."
+            exit 1
+          fi
+
+          echo "::error title=Conventional PR title required::Release Please parses the squash-merge commit title from the PR title. Rename this PR to something like 'fix(desktop): keep the sidebar scrollable' or add 'Release-Please: fix(desktop): keep the sidebar scrollable' to the PR body to leave a ready-to-use title hint."
+          exit 1

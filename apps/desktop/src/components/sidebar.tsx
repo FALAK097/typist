@@ -23,12 +23,7 @@ import type {
 } from "../types/sidebar";
 
 import { LogoComponent } from "./logo-component";
-import {
-  MoreVerticalIcon,
-  PencilIcon,
-  PinIcon,
-  TrashIcon,
-} from "./icons";
+import { MoreVerticalIcon, PencilIcon, PinIcon, TrashIcon } from "./icons";
 import { SidebarTreeNode } from "./sidebar-tree-node";
 
 const normalizePathKey = (path: string) => normalizePath(path).toLowerCase();
@@ -185,9 +180,7 @@ const SidebarShortcutRow = memo(function SidebarShortcutRow({
         <button
           type="button"
           className={`mr-2 shrink-0 cursor-pointer transition-colors hover:text-foreground ${
-            isActive
-              ? "text-sidebar-accent-foreground/70"
-              : "text-muted-foreground"
+            isActive ? "text-sidebar-accent-foreground/70" : "text-muted-foreground"
           }`}
           onClick={(event) => {
             event.stopPropagation();
@@ -295,8 +288,6 @@ export const Sidebar = ({
   folderRevealLabel,
   openInFolderLabel,
   pinnedNotes,
-  onCreateNote,
-  onOpenCommandPalette,
   onOpenFile,
   onDeleteFile,
   onTogglePinnedFile,
@@ -309,8 +300,9 @@ export const Sidebar = ({
   const [nodeToDelete, setNodeToDelete] = useState<SidebarDeleteTarget | null>(null);
   const [folderToRemove, setFolderToRemove] = useState<SidebarRemoveTarget | null>(null);
   const [draggedPath, setDraggedPath] = useState<string | null>(null);
-  const pinnedList = pinnedNotes ?? [];  const revealLabel = folderRevealLabel ?? openInFolderLabel ?? "Open in Finder";
-  const pinnedPaths = useMemo(() => pinnedList.map((note) => note.path), [pinnedList]);  const workspaceCount = tree.length;
+  const pinnedList = pinnedNotes ?? [];
+  const revealLabel = folderRevealLabel ?? openInFolderLabel ?? "Open in Finder";
+  const pinnedPaths = useMemo(() => pinnedList.map((note) => note.path), [pinnedList]);
   const handleRequestRemoveFolder = useCallback((folder: SidebarRemoveTarget) => {
     setFolderToRemove(folder);
   }, []);

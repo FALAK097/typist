@@ -17,7 +17,7 @@ export const DesktopApp = ({ glyph }: DesktopAppProps) => {
   return (
     <TooltipProvider>
       <div
-        className={`h-screen overflow-hidden grid transition-[grid-template-columns] duration-200 ${
+        className={`grid h-screen min-h-0 overflow-hidden transition-[grid-template-columns] duration-200 ${
           controller.isSidebarCollapsed || controller.isFocusMode
             ? "grid-cols-[0_minmax(0,1fr)]"
             : "grid-cols-[280px_minmax(0,1fr)]"
@@ -74,8 +74,16 @@ export const DesktopApp = ({ glyph }: DesktopAppProps) => {
             navigateBackShortcut={getShortcutDisplay(controller.shortcuts, "navigate-back")}
             navigateForwardShortcut={getShortcutDisplay(controller.shortcuts, "navigate-forward")}
             focusModeShortcut={getShortcutDisplay(controller.shortcuts, "focus-mode")}
-            onDeleteNote={controller.activeFile ? () => void controller.handleDeleteFile(controller.activeFile!.path) : undefined}
-            onOpenNewWindow={controller.activeFile ? () => void window.glyph?.openExternal(controller.activeFile!.path) : undefined}
+            onDeleteNote={
+              controller.activeFile
+                ? () => void controller.handleDeleteFile(controller.activeFile!.path)
+                : undefined
+            }
+            onOpenNewWindow={
+              controller.activeFile
+                ? () => void window.glyph?.openExternal(controller.activeFile!.path)
+                : undefined
+            }
             canGoBack={controller.canGoBack()}
             canGoForward={controller.canGoForward()}
             autoOpenPDFSetting={controller.settings?.autoOpenPDF ?? true}
