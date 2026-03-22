@@ -287,13 +287,13 @@ export function App() {
             className="mt-10 w-full max-w-3xl overflow-hidden rounded-2xl border border-black/8 bg-[color:color-mix(in_oklab,white_86%,var(--surface-paper))] text-left shadow-[0_16px_48px_-44px_oklch(0.17_0.01_110_/_0.3)]"
           >
             <div className="relative px-4 py-4">
-              <code className="block min-w-0 pr-13 whitespace-normal break-all text-[0.98rem] leading-relaxed text-[var(--ink-soft)] sm:pr-0">
+              <code className="block min-w-0 pr-13 whitespace-normal break-all text-[0.98rem] leading-relaxed text-[var(--ink-soft)] sm:pr-36">
                 {BREW_INSTALL_COMMAND}
               </code>
               <button
                 type="button"
                 aria-label={hasCopiedBrew ? "Copied command" : "Copy command"}
-                className="absolute top-3 right-3 inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-[0.55rem] border border-black/8 bg-[color:color-mix(in_oklab,white_92%,var(--surface-page))] text-[var(--ink-soft)] transition-transform duration-150 ease-out hover:-translate-y-px hover:text-[var(--ink-strong)] sm:static sm:mt-3 sm:inline-flex sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-2 sm:text-[0.82rem] sm:font-semibold"
+                className="absolute top-3 right-3 inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-[0.55rem] border border-black/8 bg-[color:color-mix(in_oklab,white_92%,var(--surface-page))] text-[var(--ink-soft)] transition-transform duration-150 ease-out hover:-translate-y-px hover:text-[var(--ink-strong)] sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-2 sm:text-[0.82rem] sm:font-semibold"
                 onClick={() => void handleCopyBrewCommand()}
               >
                 {hasCopiedBrew ? (
