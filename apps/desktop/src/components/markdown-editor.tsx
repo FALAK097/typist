@@ -37,6 +37,7 @@ import { TableOfContents } from "./table-of-contents";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
+  ArrowUpIcon,
   CheckCircleIcon,
   CopyIcon,
   DotsHorizontalIcon,
@@ -295,6 +296,7 @@ export const MarkdownEditor = ({
   content,
   fileName,
   filePath,
+  breadcrumbs,
   saveStateLabel,
   wordCount,
   readingTime,
@@ -380,6 +382,7 @@ export const MarkdownEditor = ({
   const isUpdateButtonDisabled = effectiveUpdateState?.status === "downloading";
   const isFocusLayout = Boolean(isFocusMode);
   const revealInFolderLabel = folderRevealLabel ?? getFolderRevealLabel(navigator.platform);
+  const breadcrumbTrail = (breadcrumbs ?? []).slice(0, -1);
   const editorSurfaceClassName = [
     "tiptap-editor mx-auto max-w-[800px] px-10 py-5 pb-32 text-[15px] leading-[1.7] text-foreground outline-none",
     "[&>p]:mb-4",
@@ -442,6 +445,10 @@ export const MarkdownEditor = ({
     }
 
     nextEditor.chain().focus().setTextSelection(item.pos).run();
+  }, []);
+
+  const handleScrollToTop = useCallback(() => {
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
   const clearHoveredLinkHideTimeout = () => {
     if (!hoveredLinkHideTimeoutRef.current) {
@@ -1087,6 +1094,14 @@ export const MarkdownEditor = ({
           </Tooltip>
           {fileName ? (
             <div className="flex min-w-0 flex-col justify-center gap-0.5 pl-1">
+              {breadcrumbTrail.length > 0 ? (
+                <span
+                  className="max-w-[300px] truncate text-[11px] text-muted-foreground"
+                  title={breadcrumbTrail.map((item) => item.label).join(" / ")}
+                >
+                  {breadcrumbTrail.map((item) => item.label).join(" / ")}
+                </span>
+              ) : null}
               <span
                 className="max-w-[220px] truncate text-sm font-medium text-foreground"
                 title={filePath ?? fileName}
@@ -1447,9 +1462,21 @@ export const MarkdownEditor = ({
       {shouldShowOutlineRail ? (
         <aside className="pointer-events-none absolute right-8 top-[88px] z-20 hidden xl:block w-[240px] animate-in fade-in slide-in-from-right-2 duration-200 ease-out">
           <div className="pointer-events-auto flex min-h-0 flex-col">
-            <div className="flex items-center gap-2 mb-4">
-              <OutlineIcon size={14} className="text-muted-foreground" />
-              <p className="text-sm font-medium text-foreground">On this page</p>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <OutlineIcon size={14} className="text-muted-foreground" />
+                <p className="text-sm font-medium text-foreground">On this page</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="xs"
+                className="gap-1.5 text-muted-foreground hover:text-foreground"
+                onClick={handleScrollToTop}
+                type="button"
+              >
+                <ArrowUpIcon size={12} />
+                Top
+              </Button>
             </div>
             <div className="max-h-[calc(100vh-12rem)] overflow-y-auto pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               {outlineItems.length === 0 ? (

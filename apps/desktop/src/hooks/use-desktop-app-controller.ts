@@ -920,10 +920,14 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
       ),
     );
 
+    const pinnedPathKeys = new Set(pinnedNotes.map((note) => toPathKey(note.path)));
+
     // Match files by name or path
     const matchingFiles = allSearchableFiles.filter(
       (file) =>
-        file.name.toLowerCase().includes(query) || file.relativePath.toLowerCase().includes(query),
+        (file.name.toLowerCase().includes(query) ||
+          file.relativePath.toLowerCase().includes(query)) &&
+        !pinnedPathKeys.has(toPathKey(file.path)),
     );
 
     matchingFiles.slice(0, 12).forEach((file) => {

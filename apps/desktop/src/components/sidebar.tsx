@@ -69,6 +69,14 @@ const SidebarShortcutRow = memo(function SidebarShortcutRow({
     });
   }, []);
 
+  const focusEditorSurface = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        document.querySelector<HTMLElement>("[data-glyph-editor='true']")?.focus();
+      });
+    });
+  }, []);
+
   useEffect(() => {
     if (!isRenaming) {
       return;
@@ -212,7 +220,10 @@ const SidebarShortcutRow = memo(function SidebarShortcutRow({
             variant="ghost"
             size="sm"
             className="h-auto min-w-0 flex-1 cursor-pointer justify-start truncate bg-transparent px-0 py-0 text-left text-sm hover:!bg-transparent"
-            onClick={() => onOpenFile(item.path)}
+            onClick={() => {
+              onOpenFile(item.path);
+              focusEditorSurface();
+            }}
             type="button"
           >
             {item.title}

@@ -891,7 +891,7 @@ async function readMarkdownFile(filePath: string) {
     throw err;
   }
 
-  const content = await fs.readFile(filePath, "utf8");
+  const content = (await fs.readFile(filePath, "utf8")).replace(/\r\n?/g, "\n");
 
   return {
     path: filePath,
@@ -1231,7 +1231,18 @@ ipcMain.handle("workspace:openFile", async (_event, filePath: string) =>
 );
 
 ipcMain.handle("workspace:saveFile", async (_event, filePath: string, content: string) => {
-  await fs.writeFile(filePath, content, "utf8");
+  let nextContent = content;
+
+  try {
+    const existingContent = await fs.readFile(filePath, "utf8");
+    if (existingContent.includes("\r\n")) {
+      nextContent = content.replace(/\r?\n/g, "\r\n");
+    }
+  } catch {
+    // If we can't read the existing file, fall back to the normalized editor content.
+  }
+
+  await fs.writeFile(filePath, nextContent, "utf8");
   return readMarkdownFile(filePath);
 });
 
@@ -1317,7 +1328,12 @@ ipcMain.handle("app:installUpdate", async () => {
 });
 
 ipcMain.handle("app:revealInFinder", async (_event, targetPath: string) => {
-  shell.showItemInFolder(targetPath);
+  try {
+    shell.showItemInFolder(targetPath);
+    return true;
+  } catch {
+    return false;
+  }
 });
 
 ipcMain.handle("app:saveBlob", async (_event, filePath: string, base64Data: string) => {
