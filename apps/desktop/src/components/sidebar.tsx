@@ -34,34 +34,6 @@ import {
 } from "./icons";
 import { SidebarTreeNode } from "./sidebar-tree-node";
 
-type SidebarSectionProps = {
-  title: string;
-  count?: number;
-  children: ReactNode;
-};
-
-const SidebarSection = memo(function SidebarSection({
-  title,
-  count,
-  children,
-}: SidebarSectionProps) {
-  return (
-    <section className="overflow-hidden rounded-2xl border border-sidebar-border/70 bg-sidebar/65 shadow-sm">
-      <div className="flex items-center justify-between border-b border-sidebar-border/60 px-3 py-2.5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          {title}
-        </p>
-        {typeof count === "number" ? (
-          <span className="rounded-full border border-border/60 bg-background/70 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-            {count}
-          </span>
-        ) : null}
-      </div>
-      <div className="p-2">{children}</div>
-    </section>
-  );
-});
-
 const normalizePathKey = (path: string) => normalizePath(path).toLowerCase();
 
 type SidebarShortcutRowProps = {
@@ -167,16 +139,8 @@ const SidebarShortcutRow = memo(function SidebarShortcutRow({
             {item.badge}
           </span>
         ) : null}
-        {isPinned ? (
-          <span className="ml-1 rounded-full border border-sidebar-accent/30 bg-sidebar-accent/60 px-1.5 py-0.5 text-[10px] font-medium text-sidebar-accent-foreground">
-            Pinned
-          </span>
-        ) : null}
-        {isFavorite ? (
-          <span className="ml-1 rounded-full border border-border/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-            Fav
-          </span>
-        ) : null}
+        
+        
       </Button>
 
       <Tooltip>
@@ -412,90 +376,50 @@ export const Sidebar = ({
 
   return (
     <aside className="flex h-full w-[280px] flex-col border-r border-sidebar-border bg-sidebar">
-      <div className="border-b border-sidebar-border/80 px-3 pt-3 pb-2">
-        <div
-          className="mb-3 flex items-center justify-center rounded-2xl border border-sidebar-border/70 bg-card/40 px-3 py-3"
-          style={{ WebkitAppRegion: "drag" } as CSSProperties}
-        >
-          <div style={{ WebkitAppRegion: "no-drag" } as CSSProperties}>
-            <LogoComponent size={108} />
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            type="button"
-            size="sm"
-            className="justify-center gap-2 rounded-xl"
-            onClick={onCreateNote}
-            disabled={!onCreateNote}
-          >
-            <PlusIcon size={14} />
-            New
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="justify-center gap-2 rounded-xl"
-            onClick={onOpenCommandPalette}
-            disabled={!onOpenCommandPalette}
-          >
-            <SearchIcon size={14} />
-            Search
-          </Button>
+      <div
+        className="flex h-[52px] flex-shrink-0 items-center px-4 border-b border-sidebar-border/50"
+        style={{ WebkitAppRegion: "drag" } as CSSProperties}
+      >
+        <div style={{ WebkitAppRegion: "no-drag" } as CSSProperties} className="flex items-center gap-2">
+          <LogoComponent size={20} />
+          <span className="font-semibold text-sm">Glyph</span>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto overflow-x-hidden py-3 min-h-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-        <div className="space-y-4">
-          <SidebarSection title="Pinned" count={pinnedList.length}>
-            <SidebarShortcutList
-              activePath={activePath}
-              items={pinnedList}
-              emptyLabel="Pin your key notes to keep them one click away."
-              onOpenFile={onOpenFile}
-              folderRevealLabel={revealLabel}
-              onRevealInFinder={onRevealInFinder}
-              onTogglePinnedFile={onTogglePinnedFile}
-              onToggleFavoriteFile={onToggleFavoriteFile}
-              pinnedPaths={pinnedPaths}
-              favoritePaths={favoritePaths}
-            />
-          </SidebarSection>
+        {pinnedList.length > 0 && (
+          <div className="mb-4">
+            <div className="px-4 py-1.5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                PINNED
+              </p>
+            </div>
+            <div className="px-2">
+              <SidebarShortcutList
+                activePath={activePath}
+                items={pinnedList}
+                emptyLabel="Pin your key notes to keep them one click away."
+                onOpenFile={onOpenFile}
+                folderRevealLabel={revealLabel}
+                onRevealInFinder={onRevealInFinder}
+                onTogglePinnedFile={onTogglePinnedFile}
+                onToggleFavoriteFile={onToggleFavoriteFile}
+                pinnedPaths={pinnedPaths}
+                favoritePaths={favoritePaths}
+              />
+            </div>
+          </div>
+        )}
 
-          <SidebarSection title="Favorites" count={favoriteList.length}>
-            <SidebarShortcutList
-              activePath={activePath}
-              items={favoriteList}
-              emptyLabel="Favorites are great for notes you revisit often."
-              onOpenFile={onOpenFile}
-              folderRevealLabel={revealLabel}
-              onRevealInFinder={onRevealInFinder}
-              onTogglePinnedFile={onTogglePinnedFile}
-              onToggleFavoriteFile={onToggleFavoriteFile}
-              pinnedPaths={pinnedPaths}
-              favoritePaths={favoritePaths}
-            />
-          </SidebarSection>
-
-          <SidebarSection title="Recent" count={recentList.length}>
-            <SidebarShortcutList
-              activePath={activePath}
-              items={recentList.slice(0, 6)}
-              emptyLabel="Recent notes will appear here as you move around."
-              onOpenFile={onOpenFile}
-              folderRevealLabel={revealLabel}
-              onRevealInFinder={onRevealInFinder}
-              onTogglePinnedFile={onTogglePinnedFile}
-              onToggleFavoriteFile={onToggleFavoriteFile}
-              pinnedPaths={pinnedPaths}
-              favoritePaths={favoritePaths}
-            />
-          </SidebarSection>
-
-          <SidebarSection title="Workspace" count={workspaceCount}>
+        <div>
+          <div className="px-4 py-1.5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              NOTES
+            </p>
+          </div>
+          <div className="px-2">
             {tree.length === 0 && !activePath ? (
-              <p className="px-2 text-sm text-muted-foreground">
+              <p className="px-2 py-2 text-sm text-muted-foreground">
                 Create your first note or open the palette to start navigating.
               </p>
             ) : (
@@ -525,7 +449,7 @@ export const Sidebar = ({
                 ))}
               </div>
             )}
-          </SidebarSection>
+          </div>
         </div>
       </div>
 

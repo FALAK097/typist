@@ -466,7 +466,6 @@ function getDefaultSettings(): AppSettings {
     },
     editorPreferences: {
       focusMode: false,
-      readingMode: false,
     },
     autoOpenPDF: true,
   };
@@ -513,7 +512,6 @@ function normalizeEditorPreferences(
 ): AppSettings["editorPreferences"] {
   return {
     focusMode: typeof input?.focusMode === "boolean" ? input.focusMode : false,
-    readingMode: typeof input?.readingMode === "boolean" ? input.readingMode : false,
   };
 }
 

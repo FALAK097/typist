@@ -103,8 +103,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
   );
   const editorPreferences = settings?.editorPreferences;
   const isFocusMode = editorPreferences?.focusMode ?? false;
-  const isReadingMode = editorPreferences?.readingMode ?? false;
-  const folderRevealLabel = getFolderRevealLabel(appInfo?.platform);
+    const folderRevealLabel = getFolderRevealLabel(appInfo?.platform);
   const isActiveFilePinned = activeFile
     ? (settings?.pinnedFiles ?? []).some((filePath) => isSamePath(filePath, activeFile.path))
     : false;
@@ -427,19 +426,9 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     await saveSettings({
       editorPreferences: {
         focusMode: !isFocusMode,
-        readingMode: isReadingMode,
-      },
+              },
     });
-  }, [isFocusMode, isReadingMode, saveSettings]);
-
-  const toggleReadingMode = useCallback(async () => {
-    await saveSettings({
-      editorPreferences: {
-        focusMode: isFocusMode,
-        readingMode: !isReadingMode,
-      },
-    });
-  }, [isFocusMode, isReadingMode, saveSettings]);
+  }, [isFocusMode, saveSettings]);
 
   const requestOutlineJump = useCallback((id: string) => {
     setOutlineJumpRequest({
@@ -660,100 +649,14 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
   const baseCommands = useMemo<CommandPaletteItem[]>(
     () => [
       {
-        id: "new-note",
-        title: "New note",
-        subtitle: "Create a fresh markdown note",
-        shortcut: getShortcutDisplay(shortcuts, "new-note"),
-        section: "Actions",
-        kind: "command",
-        onSelect: () => void createNote(),
-      },
-      {
-        id: "open-file",
-        title: "Open File",
-        subtitle: "Open an existing markdown file",
-        shortcut: getShortcutDisplay(shortcuts, "open-file"),
-        section: "Actions",
-        kind: "command",
-        onSelect: async () => {
-          const file = await glyph.openDocument();
-          if (file) {
-            await syncOpenedFile(file, { recordHistory: true });
-          }
-          setIsPaletteOpen(false);
-        },
-      },
-      {
-        id: "open-folder",
-        title: "Open Folder",
-        subtitle: "Open a folder as a workspace",
-        shortcut: getShortcutDisplay(shortcuts, "open-folder"),
-        section: "Actions",
-        kind: "command",
-        onSelect: async () => {
-          const workspace = await glyph.openFolder();
-          if (workspace) {
-            syncWorkspace(workspace);
-            setIsWorkspaceMode(true);
-          }
-          setIsPaletteOpen(false);
-        },
-      },
-      {
-        id: "navigate-back",
-        title: "Navigate Back",
-        subtitle: "Go to previous file in history",
-        shortcut: getShortcutDisplay(shortcuts, "navigate-back"),
-        section: "Navigation",
-        kind: "command",
-        onSelect: () => {
-          void navigateBack();
-          setIsPaletteOpen(false);
-        },
-      },
-      {
-        id: "navigate-forward",
-        title: "Navigate Forward",
-        subtitle: "Go to next file in history",
-        shortcut: getShortcutDisplay(shortcuts, "navigate-forward"),
-        section: "Navigation",
-        kind: "command",
-        onSelect: () => {
-          void navigateForward();
-          setIsPaletteOpen(false);
-        },
-      },
-      {
-        id: "settings",
-        title: "Settings",
-        subtitle: "Adjust workspace defaults",
-        shortcut: getShortcutDisplay(shortcuts, "settings"),
-        section: "Actions",
-        kind: "command",
-        onSelect: () => {
-          setIsSettingsOpen(true);
-          setIsPaletteOpen(false);
-        },
-      },
-      {
         id: "toggle-focus-mode",
         title: isFocusMode ? "Exit Focus Mode" : "Enter Focus Mode",
+        shortcut: getShortcutDisplay(shortcuts, "focus-mode"),
         subtitle: "Hide navigation and keep the note centered",
         section: "View",
         kind: "command",
         onSelect: () => {
           void toggleFocusMode();
-          setIsPaletteOpen(false);
-        },
-      },
-      {
-        id: "toggle-reading-mode",
-        title: isReadingMode ? "Exit Reading Mode" : "Enter Reading Mode",
-        subtitle: "Switch between editing and distraction-free reading",
-        section: "View",
-        kind: "command",
-        onSelect: () => {
-          void toggleReadingMode();
           setIsPaletteOpen(false);
         },
       },
@@ -772,74 +675,17 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
                 setIsPaletteOpen(false);
               },
             },
-            {
-              id: "favorite-note",
-              title: isActiveFileFavorite ? "Unfavorite Current Note" : "Favorite Current Note",
-              subtitle: isActiveFileFavorite
-                ? "Remove it from favorites"
-                : "Keep it in your favorites section",
-              section: "Note",
-              kind: "command" as const,
-              onSelect: () => {
-                void toggleFavoriteFile(activeFile.path);
-                setIsPaletteOpen(false);
-              },
-            },
           ]
         : []),
-      {
-        id: "theme-light",
-        title: "Theme: Light",
-        subtitle: "Switch to light mode",
-        section: "Theme",
-        kind: "command",
-        onSelect: () => {
-          void saveSettings({ themeMode: "light" });
-          setIsPaletteOpen(false);
-        },
-      },
-      {
-        id: "theme-dark",
-        title: "Theme: Dark",
-        subtitle: "Switch to dark mode",
-        section: "Theme",
-        kind: "command",
-        onSelect: () => {
-          void saveSettings({ themeMode: "dark" });
-          setIsPaletteOpen(false);
-        },
-      },
-      {
-        id: "theme-system",
-        title: "Theme: System",
-        subtitle: "Sync theme with system",
-        section: "Theme",
-        kind: "command",
-        onSelect: () => {
-          void saveSettings({ themeMode: "system" });
-          setIsPaletteOpen(false);
-        },
-      },
     ],
     [
       activeFile,
-      createNote,
-      isActiveFileFavorite,
       isActiveFilePinned,
       isFocusMode,
-      isReadingMode,
-      navigateBack,
-      navigateForward,
-      saveSettings,
       shortcuts,
-      syncOpenedFile,
-      syncWorkspace,
-      toggleFavoriteFile,
       toggleFocusMode,
       togglePinnedFile,
-      toggleReadingMode,
-      glyph,
-    ],
+          ],
   );
 
   // Stable deduplicated file list — only rebuilds when sidebarNodes or files change, never on query change
@@ -1357,7 +1203,6 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     isActiveFilePinned,
     isFocusMode,
     isPaletteOpen,
-    isReadingMode,
     isSaving,
     isSettingsOpen,
     isSidebarCollapsed,
@@ -1389,8 +1234,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     toggleFavoriteFile,
     toggleFocusMode,
     togglePinnedFile,
-    toggleReadingMode,
-    triggerUpdateAction,
+        triggerUpdateAction,
     updateState,
     updateDraftContent: handleDraftChange,
     visibleSidebarNodes,

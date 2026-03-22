@@ -59,7 +59,6 @@ export const DesktopApp = ({ glyph }: DesktopAppProps) => {
             filePath={controller.activeFile?.path ?? null}
             saveStateLabel={controller.saveStateLabel}
             wordCount={controller.wordCount}
-            readingTime={controller.readingTime}
             onChange={controller.updateDraftContent}
             onToggleSidebar={() => controller.setIsSidebarCollapsed(!controller.isSidebarCollapsed)}
             isSidebarCollapsed={controller.isSidebarCollapsed}
@@ -84,7 +83,6 @@ export const DesktopApp = ({ glyph }: DesktopAppProps) => {
             isActiveFileFavorite={controller.isActiveFileFavorite}
             isActiveFilePinned={controller.isActiveFilePinned}
             isFocusMode={controller.isFocusMode}
-            isReadingMode={controller.isReadingMode}
             nextHistoryItem={controller.nextHistoryItem}
             onOutlineJumpHandled={controller.clearOutlineJumpRequest}
             onToggleFavoriteFile={
@@ -98,7 +96,6 @@ export const DesktopApp = ({ glyph }: DesktopAppProps) => {
                 ? () => void controller.togglePinnedFile(controller.activeFile!.path)
                 : undefined
             }
-            onToggleReadingMode={() => void controller.toggleReadingMode()}
             outlineItems={controller.outlineItems}
             outlineJumpRequest={controller.outlineJumpRequest}
             previousHistoryItem={controller.previousHistoryItem}

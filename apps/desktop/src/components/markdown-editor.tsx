@@ -50,10 +50,10 @@ import {
   PinIcon,
   PinOffIcon,
   PlusIcon,
-  ReadingModeIcon,
   RevealInFolderIcon,
   SearchIcon,
   TrashIcon,
+  OutlineIcon,
 } from "./icons";
 
 import type { MarkdownEditorProps, MarkdownEditorToast } from "../types/markdown-editor";
@@ -302,7 +302,6 @@ export const MarkdownEditor = ({
   breadcrumbs,
   saveStateLabel,
   wordCount,
-  readingTime,
   onChange,
   onToggleSidebar,
   isSidebarCollapsed,
@@ -328,10 +327,8 @@ export const MarkdownEditor = ({
   updateState,
   onUpdateAction,
   isFocusMode,
-  isReadingMode,
   onToggleFocusMode,
   onTogglePinnedFile,
-  onToggleReadingMode,
   folderRevealLabel,
   outlineJumpRequest,
   previousHistoryItem,
@@ -399,7 +396,6 @@ export const MarkdownEditor = ({
     [resolvedBreadcrumbs],
   );
   const isFocusLayout = Boolean(isFocusMode);
-  const isReadingLayout = Boolean(isReadingMode);
   const revealInFolderLabel = folderRevealLabel ?? getFolderRevealLabel(navigator.platform);
   const editorSurfaceClassName = [
     "tiptap-editor mx-auto max-w-[800px] px-10 py-5 pb-32 text-[15px] leading-[1.7] text-foreground outline-none",
@@ -427,9 +423,6 @@ export const MarkdownEditor = ({
     "[&_.tableWrapper_th]:border [&_.tableWrapper_th]:border-border [&_.tableWrapper_th]:px-3 [&_.tableWrapper_th]:py-2 [&_.tableWrapper_th]:align-top",
     "[&_.tableWrapper_td]:border [&_.tableWrapper_td]:border-border [&_.tableWrapper_td]:px-3 [&_.tableWrapper_td]:py-2 [&_.tableWrapper_td]:align-top",
     "[&>img]:max-w-full [&>img]:h-auto [&>img]:rounded-xl",
-    isReadingLayout ? "text-[16px] leading-[1.85]" : "",
-    isReadingLayout ? "[&>p]:mb-5" : "",
-    isFocusLayout ? "max-w-[720px] px-8" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -665,7 +658,6 @@ export const MarkdownEditor = ({
     enableInputRules: true,
     enablePasteRules: true,
     content: content,
-    editable: !isReadingLayout,
     editorProps: {
       attributes: {
         class: editorSurfaceClassName,
@@ -807,8 +799,8 @@ export const MarkdownEditor = ({
     }
 
     liveEditorRef.current = editor;
-    editor.setEditable(!isReadingLayout);
-  }, [editor, isReadingLayout]);
+    editor.setEditable(true);
+  }, [editor]);
 
   useEffect(() => {
     if (!filePath) {
@@ -1063,10 +1055,10 @@ export const MarkdownEditor = ({
 
   const isMacLike = navigator.platform.includes("Mac");
   const linkOpenShortcutHint = isMacLike ? "Open link (Cmd+Click)" : "Open link (Ctrl+Click)";
-  const headerPaddingClass = isSidebarCollapsed && isMacLike ? "pl-20 pr-4" : "px-4";
+  const headerPaddingClass = (isSidebarCollapsed || isFocusLayout) && isMacLike ? "pl-20 pr-4" : "px-4";
   const shouldShowOutlineRail = !isFocusLayout;
   const shouldShowCommandPalette = Boolean(onOpenCommandPalette && !isFocusLayout);
-  const modeButtonsVisible = Boolean(onToggleFocusMode || onToggleReadingMode);
+  const modeButtonsVisible = Boolean(onToggleFocusMode);
   const breadcrumbContext = breadcrumbTrail.map((item) => item.label).join(" / ");
   const backTooltipLabel = previousHistoryItem
     ? `Back to ${previousHistoryItem.title} (${navigateBackShortcut ?? "⌘["})`
@@ -1205,7 +1197,7 @@ export const MarkdownEditor = ({
                       variant="ghost"
                       size="icon-sm"
                       className={`text-muted-foreground transition-colors ${
-                        isFocusLayout ? "bg-muted text-foreground" : "hover:text-foreground hover:bg-muted"
+                        isFocusLayout ? "text-foreground" : "hover:text-foreground hover:bg-muted"
                       }`}
                       onClick={onToggleFocusMode}
                       aria-pressed={isFocusLayout}
@@ -1219,27 +1211,7 @@ export const MarkdownEditor = ({
                   </TooltipContent>
                 </Tooltip>
               ) : null}
-              {onToggleReadingMode ? (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      className={`text-muted-foreground transition-colors ${
-                        isReadingLayout ? "bg-muted text-foreground" : "hover:text-foreground hover:bg-muted"
-                      }`}
-                      onClick={onToggleReadingMode}
-                      aria-pressed={isReadingLayout}
-                      type="button"
-                    >
-                      <ReadingModeIcon size={16} />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    {isReadingLayout ? "Exit Reading Mode" : "Enter Reading Mode"}
-                  </TooltipContent>
-                </Tooltip>
-              ) : null}
+
             </div>
           ) : null}
           {shouldShowUpdateButton && onUpdateAction ? (
@@ -1426,7 +1398,7 @@ export const MarkdownEditor = ({
           storeNoteViewState(filePath);
         }}
       >
-        {tableControls.active && !isReadingLayout ? (
+        {tableControls.active ? (
           <div className="pointer-events-none absolute top-4 right-6 z-20">
             <div className="pointer-events-auto flex flex-wrap items-center gap-2 rounded-2xl border border-border/70 bg-card/95 px-3 py-2 shadow-lg supports-backdrop-filter:backdrop-blur-sm">
               <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
@@ -1548,43 +1520,31 @@ export const MarkdownEditor = ({
         <EditorContent editor={editor} />
       </div>
       {shouldShowOutlineRail ? (
-        <aside className="pointer-events-none absolute right-4 top-[72px] z-20 hidden xl:block w-[290px] animate-in fade-in slide-in-from-right-2 duration-200 ease-out">
-          <div className="pointer-events-auto flex min-h-0 flex-col rounded-2xl border border-border/60 bg-card/95 p-4 shadow-lg backdrop-blur-sm">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                  Outline
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">{outlineItems.length} headings</p>
-              </div>
-              <Button variant="ghost" size="xs" type="button" onClick={handleScrollToTop} className="transition-transform active:scale-[0.95]">
-                Top
-              </Button>
+        <aside className="pointer-events-none absolute right-8 top-[88px] z-20 hidden xl:block w-[240px] animate-in fade-in slide-in-from-right-2 duration-200 ease-out">
+          <div className="pointer-events-auto flex min-h-0 flex-col">
+            <div className="flex items-center gap-2 mb-4">
+              <OutlineIcon size={14} className="text-muted-foreground" />
+              <p className="text-sm font-medium text-foreground">
+                On this page
+              </p>
             </div>
-            <div className="mt-4 max-h-[calc(100vh-12rem)] overflow-y-auto pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <div className="max-h-[calc(100vh-12rem)] overflow-y-auto pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               {outlineItems.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Add H1 to H4 headings to build a quick table of contents.
+                  Add headings to build a table of contents.
                 </p>
               ) : (
-                <div className="space-y-1">
+                <div className="flex flex-col border-l border-border/40 py-1">
                   {outlineItems.map((item) => (
-                    <Button
+                    <button
                       key={item.id}
-                      variant="ghost"
-                      size="sm"
                       type="button"
-                      className="h-auto w-full justify-start rounded-xl px-3 py-2 text-left text-sm text-foreground hover:bg-muted/70 transition-transform active:scale-[0.98]"
+                      className="w-full text-left py-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors truncate"
                       style={outlineIndentStyles[item.depth]}
                       onClick={() => handleJumpToHeading(item)}
                     >
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate font-medium">{item.title}</div>
-                        <div className="mt-0.5 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-                          H{item.depth} · line {item.line}
-                        </div>
-                      </div>
-                    </Button>
+                      {item.title}
+                    </button>
                   ))}
                 </div>
               )}
@@ -1599,7 +1559,6 @@ export const MarkdownEditor = ({
       >
         <div className="flex items-center gap-2 text-muted-foreground text-xs">
           <span>{wordCount} words</span>
-          <span>{readingTime} min read</span>
         </div>
         <div className="w-[1px] h-3 bg-border" />
         <p className="text-xs font-medium text-foreground m-0">{saveStateLabel}</p>

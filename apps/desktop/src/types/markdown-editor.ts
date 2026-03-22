@@ -9,7 +9,6 @@ export type MarkdownEditorProps = {
   breadcrumbs?: BreadcrumbItem[];
   saveStateLabel: string;
   wordCount: number;
-  readingTime: number;
   onChange: (value: string) => void;
   onToggleSidebar?: () => void;
   isSidebarCollapsed?: boolean;
@@ -35,10 +34,8 @@ export type MarkdownEditorProps = {
   updateState?: UpdateState | null;
   onUpdateAction?: () => void;
   isFocusMode?: boolean;
-  isReadingMode?: boolean;
   onToggleFocusMode?: () => void;
   onTogglePinnedFile?: () => void;
-  onToggleReadingMode?: () => void;
   folderRevealLabel?: string;
   outlineItems?: OutlineItem[];
   outlineJumpRequest?: { id: string; nonce: number } | null;
