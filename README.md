@@ -98,30 +98,10 @@ pnpm cask:generate --version <version> --artifact-path apps/desktop/release/Glyp
 
 ## Pre-commit checks
 
-This repo includes a git pre-commit hook at `.githooks/pre-commit` to run core quality gates before a commit is created:
+Enable the repository pre-commit hook after install:
 
 ```bash
-pnpm fmt:check && pnpm lint && pnpm typecheck
-```
-
-### Setup
-
-Install dependencies once, then point git at the repo hooks directory:
-
-```bash
-pnpm install
 pnpm hooks:install
 ```
 
-### If a commit is blocked
-
-- fix the reported formatting/lint/type issues
-- re-run checks locally if needed:
-
-```bash
-pnpm fmt:check
-pnpm lint
-pnpm typecheck
-```
-
-- re-commit once all checks pass
+The hook runs `pnpm fmt:check`, `pnpm lint`, and `pnpm typecheck` before a commit is created.
