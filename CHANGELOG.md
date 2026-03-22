@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/FALAK097/glyph/compare/v0.2.3...v0.2.4) (2026-03-22)
+
+
+### Bug Fixes
+
+* **release:** keep release-please automation flowing ([#120](https://github.com/FALAK097/glyph/issues/120)) ([d38f1d4](https://github.com/FALAK097/glyph/commit/d38f1d465f91bf73f38dcfc93e3ba4f92b083d7d))
+
 ## [0.2.3](https://github.com/FALAK097/glyph/compare/v0.2.2...v0.2.3) (2026-03-21)
 
 
