@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      release_as:
+        description: "Optional version to force for the next release PR, for example 0.2.4"
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -24,3 +30,4 @@ jobs:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
           config-file: .release-please-config.json
           manifest-file: .release-please-manifest.json
+          release-as: ${{ github.event_name == 'workflow_dispatch' && inputs.release_as || '' }}

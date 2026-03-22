@@ -105,3 +105,14 @@ pnpm hooks:install
 ```
 
 The hook runs `pnpm fmt:check`, `pnpm lint`, and `pnpm typecheck` before a commit is created.
+
+## Release flow
+
+`Release Please` runs on every push to `main` and opens or updates the release PR branch when it finds releasable Conventional Commits.
+
+- If you squash merge PRs, the PR title becomes the commit title on `main`, so the PR title must use Conventional Commit format.
+- Good PR titles: `fix(desktop): keep the sidebar scrollable` and `feat(web): improve the download experience`.
+- Titles like `[codex] Fix desktop sidebar scroll and editor controls` or `Update release downloads and improve web install UX` will merge, but `release-please` will skip them.
+- If the title is still being refined, add a `Release-Please: fix(desktop): keep the sidebar scrollable` line to the PR body so the workflow can suggest the exact rename to use before merge.
+- The `release-please--branches--main--components--glyph` branch is only refreshed when a release PR is created or updated, so it can lag behind `main` between releases.
+- If a non-conventional title already landed on `main`, run the `Release Please` workflow manually and set `release_as` to the next version, for example `0.2.4`, to backfill the release PR.
