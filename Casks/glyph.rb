@@ -1,6 +1,6 @@
 cask "glyph" do
-  version "0.2.5"
-  sha256 "4ae87aa879057e636e912fa4836a36fa0cf71e3a345ac9e87fcadc6797283cf0"
+  version "0.3.0"
+  sha256 "3dd74b856a03365b3ef30bb9ddbe690a6e68cf5c8ca30f2254e246f29b52281b"
 
   url "https://github.com/FALAK097/glyph/releases/download/v#{version}/Glyph-mac.dmg"
   name "Glyph"
