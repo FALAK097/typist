@@ -1,8 +1,8 @@
 cask "glyph" do
-  version "0.2.3"
-  sha256 "3cf5b859dd06e2f69901ac4ae2c27b64b5ac2496c965d0829a2ae1a6f35a44e2"
+  version "0.2.4"
+  sha256 "0a1296b00222a7435017f4f5b2877d29aefce85ae9299f8c6f4ba8bbc9840e7a"
 
-  url "https://github.com/FALAK097/glyph/releases/download/v#{version}/Glyph-#{version}-mac.dmg"
+  url "https://github.com/FALAK097/glyph/releases/download/v#{version}/Glyph-mac.dmg"
   name "Glyph"
   desc "Minimal markdown viewer and editor"
   homepage "https://github.com/FALAK097/glyph"
