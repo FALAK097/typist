@@ -115,4 +115,12 @@ The hook runs `pnpm fmt:check`, `pnpm lint`, and `pnpm typecheck` before a commi
 - Titles like `[codex] Fix desktop sidebar scroll and editor controls` or `Update release downloads and improve web install UX` will merge, but `release-please` will skip them.
 - If the title is still being refined, add a `Release-Please: fix(desktop): keep the sidebar scrollable` line to the PR body so the workflow can suggest the exact rename to use before merge.
 - The `release-please--branches--main--components--glyph` branch is only refreshed when a release PR is created or updated, so it can lag behind `main` between releases.
-- If a non-conventional title already landed on `main`, run the `Release Please` workflow manually and set `release_as` to the next version, for example `0.2.4`, to backfill the release PR.
+- If a non-conventional squash-merge title already landed on `main`, edit the merged PR body and add a commit override block with a Conventional Commit message, then rerun the `Release Please` workflow manually:
+
+```text
+BEGIN_COMMIT_OVERRIDE
+fix(desktop): keep the sidebar scrollable
+END_COMMIT_OVERRIDE
+```
+
+- If you truly need to force a specific version number, use the upstream `Release-As: x.y.z` commit-body flow on a commit to `main`; do not rely on the action's `release-as` input in manifest mode.
