@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { OutlineItem } from "./../types/navigation";
 export type EditorOutlineItem = OutlineItem & { pos: number };
 
@@ -13,102 +13,148 @@ export function TableOfContents({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [pathData, setPathData] = useState("");
-  const [activeLength, setActiveLength] = useState(0);
+  const [activeOffset, setActiveOffset] = useState(0);
+  const [totalPathLength, setTotalPathLength] = useState(0);
   const [markerState, setMarkerState] = useState<{ x: number; y: number } | null>(null);
   const itemRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
-
-  useEffect(() => {
-    if (!containerRef.current || items.length === 0) return;
-
-    // Small delay to allow layout to settle
-    const timeoutId = window.setTimeout(() => {
-      let d = "";
-      let currentX = 1;
-      let currentY = 0;
-      let totalLength = 0;
-      let currentActiveLength = 0;
-
-      const RADIUS = 8;
-      const CURVE_LEN = (Math.PI * RADIUS) / 2;
-      let foundActive = false;
-
-      const nodes = items
-        .map((item) => {
-          const el = itemRefs.current.get(item.id);
-          if (!el) return null;
-          const x = 1 + (item.depth - 1) * 12;
-          return {
-            id: item.id,
-            x,
-            y: el.offsetTop,
-            h: el.offsetHeight,
-            isActive: item.id === activeId,
-          };
-        })
-        .filter(Boolean) as Array<{
-        id: string;
-        x: number;
-        y: number;
-        h: number;
-        isActive: boolean;
-      }>;
-
-      if (nodes.length === 0) return;
-
-      nodes.forEach((node, i) => {
-        if (i === 0) {
-          currentX = node.x;
-          currentY = node.y;
-          d += `M ${currentX} ${currentY}`;
-        } else {
-          if (node.x === currentX) {
-            const dist = node.y - currentY;
-            d += ` L ${currentX} ${node.y}`;
-            totalLength += dist;
-            currentY = node.y;
-          } else {
-            const isRight = node.x > currentX;
-            const dist1 = (node.y - RADIUS) - currentY;
-            d += ` L ${currentX} ${node.y - RADIUS}`;
-            totalLength += dist1;
-
-            d += ` Q ${currentX} ${node.y} ${currentX + (isRight ? RADIUS : -RADIUS)} ${node.y}`;
-            totalLength += CURVE_LEN;
-
-            const hDist = Math.abs(node.x - currentX) - 2 * RADIUS;
-            d += ` L ${node.x - (isRight ? RADIUS : -RADIUS)} ${node.y}`;
-            totalLength += hDist;
-
-            d += ` Q ${node.x} ${node.y} ${node.x} ${node.y + RADIUS}`;
-            totalLength += CURVE_LEN;
-
-            currentX = node.x;
-            currentY = node.y + RADIUS;
-          }
-        }
-
-        const dotY = node.y + node.h / 2;
-        if (node.isActive) {
-          foundActive = true;
-          currentActiveLength = totalLength + Math.max(0, dotY - currentY);
-          setMarkerState({ x: currentX, y: dotY });
-        }
-
-        const dist2 = (node.y + node.h) - currentY;
-        d += ` L ${currentX} ${node.y + node.h}`;
-        totalLength += dist2;
-        currentY = node.y + node.h;
-      });
-
-      setPathData(d);
-      setActiveLength(currentActiveLength);
-      if (!foundActive) setMarkerState(null);
-    }, 50);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [items, activeId]);
+  const bgPathRef = useRef<SVGPathElement>(null);
 
   const ACTIVE_LINE_LENGTH = 32;
+
+  const buildPath = useCallback(() => {
+    if (!containerRef.current || items.length === 0) return;
+
+    let d = "";
+    let currentX = 1;
+    let currentY = 0;
+
+    const RADIUS = 8;
+
+    const nodes = items
+      .map((item) => {
+        const el = itemRefs.current.get(item.id);
+        if (!el) return null;
+        const x = 1 + (item.depth - 1) * 12;
+        return {
+          id: item.id,
+          x,
+          y: el.offsetTop,
+          h: el.offsetHeight,
+          isActive: item.id === activeId,
+        };
+      })
+      .filter(Boolean) as Array<{
+      id: string;
+      x: number;
+      y: number;
+      h: number;
+      isActive: boolean;
+    }>;
+
+    if (nodes.length === 0) return;
+
+    let activeNode: (typeof nodes)[0] | null = null;
+
+    nodes.forEach((node, i) => {
+      if (i === 0) {
+        currentX = node.x;
+        currentY = node.y;
+        d += `M ${currentX} ${currentY}`;
+      } else {
+        if (node.x === currentX) {
+          d += ` L ${currentX} ${node.y}`;
+          currentY = node.y;
+        } else {
+          const isRight = node.x > currentX;
+          d += ` L ${currentX} ${node.y - RADIUS}`;
+
+          d += ` Q ${currentX} ${node.y} ${currentX + (isRight ? RADIUS : -RADIUS)} ${node.y}`;
+
+          d += ` L ${node.x - (isRight ? RADIUS : -RADIUS)} ${node.y}`;
+
+          d += ` Q ${node.x} ${node.y} ${node.x} ${node.y + RADIUS}`;
+
+          currentX = node.x;
+          currentY = node.y + RADIUS;
+        }
+      }
+
+      if (node.isActive) {
+        activeNode = node;
+      }
+
+      d += ` L ${currentX} ${node.y + node.h}`;
+      currentY = node.y + node.h;
+    });
+
+    setPathData(d);
+
+    // Use rAF to ensure the SVG path element has rendered with the new data
+    requestAnimationFrame(() => {
+      const pathEl = bgPathRef.current;
+      if (!pathEl) return;
+
+      const fullLength = pathEl.getTotalLength();
+      setTotalPathLength(fullLength);
+
+      if (!activeNode) {
+        setMarkerState(null);
+        setActiveOffset(0);
+        return;
+      }
+
+      const dotX = activeNode.x;
+      const dotY = activeNode.y + activeNode.h / 2;
+      setMarkerState({ x: dotX, y: dotY });
+
+      // Binary search to find the path length that corresponds to the dot's Y position
+      // along the active node's x column
+      let lo = 0;
+      let hi = fullLength;
+      let bestLen = 0;
+      let bestDist = Infinity;
+
+      for (let iter = 0; iter < 50; iter++) {
+        const mid = (lo + hi) / 2;
+        const pt = pathEl.getPointAtLength(mid);
+
+        const dist = Math.abs(pt.y - dotY) + Math.abs(pt.x - dotX) * 0.5;
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestLen = mid;
+        }
+
+        if (pt.y < dotY) {
+          lo = mid;
+        } else {
+          hi = mid;
+        }
+      }
+
+      // Also do a fine linear scan around the best point for precision
+      const scanStart = Math.max(0, bestLen - 20);
+      const scanEnd = Math.min(fullLength, bestLen + 20);
+      for (let l = scanStart; l <= scanEnd; l += 0.5) {
+        const pt = pathEl.getPointAtLength(l);
+        const dist = Math.abs(pt.y - dotY) + Math.abs(pt.x - dotX) * 0.5;
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestLen = l;
+        }
+      }
+
+      setActiveOffset(bestLen);
+    });
+  }, [items, activeId]);
+
+  useEffect(() => {
+    // Small delay to allow layout to settle
+    const timeoutId = window.setTimeout(buildPath, 50);
+    return () => window.clearTimeout(timeoutId);
+  }, [buildPath]);
+
+  // The dashoffset positions the active segment so the line ends at the dot
+  const dashOffset = ACTIVE_LINE_LENGTH - activeOffset;
 
   return (
     <div className="relative pl-[1px]" ref={containerRef}>
@@ -117,6 +163,7 @@ export function TableOfContents({
         style={{ minWidth: 40, zIndex: 10 }}
       >
         <path
+          ref={bgPathRef}
           d={pathData}
           fill="none"
           stroke="currentColor"
@@ -131,8 +178,8 @@ export function TableOfContents({
           className={`text-primary transition-all duration-300 ease-out ${
             !markerState ? "opacity-0" : "opacity-100"
           }`}
-          strokeDasharray={`${ACTIVE_LINE_LENGTH} 10000`}
-          strokeDashoffset={ACTIVE_LINE_LENGTH - activeLength}
+          strokeDasharray={`${ACTIVE_LINE_LENGTH} ${totalPathLength + ACTIVE_LINE_LENGTH}`}
+          strokeDashoffset={dashOffset}
         />
         {markerState && (
           <circle

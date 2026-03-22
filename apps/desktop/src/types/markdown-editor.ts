@@ -9,6 +9,7 @@ export type MarkdownEditorProps = {
   breadcrumbs?: BreadcrumbItem[];
   saveStateLabel: string;
   wordCount: number;
+  readingTime: number;
   onChange: (value: string) => void;
   onToggleSidebar?: () => void;
   isSidebarCollapsed?: boolean;

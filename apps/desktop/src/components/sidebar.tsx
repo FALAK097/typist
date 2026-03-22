@@ -27,7 +27,6 @@ import {
   MoreVerticalIcon,
   PencilIcon,
   PinIcon,
-  RevealInFolderIcon,
   TrashIcon,
 } from "./icons";
 import { SidebarTreeNode } from "./sidebar-tree-node";
@@ -37,9 +36,8 @@ const normalizePathKey = (path: string) => normalizePath(path).toLowerCase();
 type SidebarShortcutRowProps = {
   activePath: string | null;
   item: NoteShortcutItem;
-  folderRevealLabel: string;
   onOpenFile: (filePath: string) => void;
-  onRevealInFinder: (targetPath: string) => void;
+  onTogglePinnedFile?: (filePath: string) => void;
   onDeleteFile: (filePath: string) => void;
   onRenameFile: (filePath: string, newName: string) => void;
 };
@@ -47,9 +45,8 @@ type SidebarShortcutRowProps = {
 const SidebarShortcutRow = memo(function SidebarShortcutRow({
   activePath,
   item,
-  folderRevealLabel,
   onOpenFile,
-  onRevealInFinder,
+  onTogglePinnedFile,
   onDeleteFile,
   onRenameFile,
 }: SidebarShortcutRowProps) {
@@ -151,21 +148,6 @@ const SidebarShortcutRow = memo(function SidebarShortcutRow({
           <Button
             variant="ghost"
             size="sm"
-            className="h-auto w-full justify-start gap-2 rounded-none px-2.5 py-1.5 text-sm"
-            onClick={(event) => {
-              event.stopPropagation();
-              onRevealInFinder(item.path);
-              setShowMenu(false);
-              focusMenuButton();
-            }}
-            type="button"
-          >
-            <RevealInFolderIcon size={14} className="shrink-0 opacity-70" />
-            {folderRevealLabel}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
             className="h-auto w-full justify-start gap-2 rounded-none px-2.5 py-1.5 text-sm hover:bg-destructive/10 hover:text-destructive"
             onClick={(event) => {
               event.stopPropagation();
@@ -200,14 +182,21 @@ const SidebarShortcutRow = memo(function SidebarShortcutRow({
           paddingBottom: "6px",
         }}
       >
-        <PinIcon
-          size={12}
-          className={`mr-2 shrink-0 transition-colors ${
+        <button
+          type="button"
+          className={`mr-2 shrink-0 cursor-pointer transition-colors hover:text-foreground ${
             isActive
               ? "text-sidebar-accent-foreground/70"
               : "text-muted-foreground"
           }`}
-        />
+          onClick={(event) => {
+            event.stopPropagation();
+            onTogglePinnedFile?.(item.path);
+          }}
+          aria-label="Unpin note"
+        >
+          <PinIcon size={12} />
+        </button>
         {isRenaming ? (
           <input
             ref={renameInputRef}
@@ -264,9 +253,8 @@ const SidebarShortcutRow = memo(function SidebarShortcutRow({
 type SidebarShortcutListProps = {
   activePath: string | null;
   items: NoteShortcutItem[];
-  folderRevealLabel: string;
   onOpenFile: (filePath: string) => void;
-  onRevealInFinder: (targetPath: string) => void;
+  onTogglePinnedFile?: (filePath: string) => void;
   onDeleteFile: (filePath: string) => void;
   onRenameFile: (filePath: string, newName: string) => void;
 };
@@ -274,9 +262,8 @@ type SidebarShortcutListProps = {
 const SidebarShortcutList = memo(function SidebarShortcutList({
   activePath,
   items,
-  folderRevealLabel,
   onOpenFile,
-  onRevealInFinder,
+  onTogglePinnedFile,
   onDeleteFile,
   onRenameFile,
 }: SidebarShortcutListProps) {
@@ -291,9 +278,8 @@ const SidebarShortcutList = memo(function SidebarShortcutList({
           key={item.path}
           activePath={activePath}
           item={item}
-          folderRevealLabel={folderRevealLabel}
           onOpenFile={onOpenFile}
-          onRevealInFinder={onRevealInFinder}
+          onTogglePinnedFile={onTogglePinnedFile}
           onDeleteFile={onDeleteFile}
           onRenameFile={onRenameFile}
         />
@@ -379,8 +365,7 @@ export const Sidebar = ({
               activePath={activePath}
               items={pinnedList}
               onOpenFile={onOpenFile}
-              folderRevealLabel={revealLabel}
-              onRevealInFinder={onRevealInFinder}
+              onTogglePinnedFile={onTogglePinnedFile}
               onDeleteFile={(filePath) => {
                 const segments = filePath.replace(/\\/g, "/").split("/");
                 const name = segments.pop() ?? filePath;

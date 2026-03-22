@@ -797,8 +797,9 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
       glyph,
       isActiveFilePinned,
       isFocusMode,
-      navigateBack,
-      navigateForward,
+    navigateBack,
+    navigateForward,
+    toggleFocusMode,
       saveSettings,
       shortcuts,
       showOutline,
@@ -1007,6 +1008,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
         "settings",
         "navigate-back",
         "navigate-forward",
+        "focus-mode",
       ]);
       const globalShortcut = shortcuts.find(
         (entry) => globalShortcutIds.has(entry.id) && matchShortcut(event, entry.keys),
@@ -1028,6 +1030,9 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
             break;
           case "navigate-forward":
             void navigateForward();
+            break;
+          case "focus-mode":
+            void toggleFocusMode();
             break;
         }
         return;
@@ -1109,6 +1114,11 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
         return;
       }
 
+      if (command === "focus-mode") {
+        void toggleFocusMode();
+        return;
+      }
+
       if (command === "new-file") {
         await createNote();
         return;
@@ -1154,6 +1164,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     syncOpenedFile,
     syncWorkspace,
     glyph,
+    toggleFocusMode,
   ]);
 
   const saveStateLabel = isSaving

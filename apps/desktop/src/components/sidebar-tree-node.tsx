@@ -9,12 +9,10 @@ import { getDisplayFileName, isSamePath } from "@/lib/paths";
 
 import {
   ChevronRightIcon,
-  CheckCircleIcon,
   FileIcon,
   FolderIcon,
   MoreVerticalIcon,
   PinIcon,
-  PinOffIcon,
   PencilIcon,
   RevealInFolderIcon,
   TrashIcon,
@@ -59,17 +57,9 @@ export const SidebarTreeNode = memo(function SidebarTreeNode({
   const pinnedPathList = pinnedPaths ?? [];
   const isPinned = pinnedPathList.some((path) => isSamePath(path, node.path));
   const isActive = isSamePath(activePath, node.path);
-  const pinLabel = isPinned ? "Unpin note" : "Pin note";
   const focusMenuButton = useCallback(() => {
     window.requestAnimationFrame(() => {
       menuButtonRef.current?.focus();
-    });
-  }, []);
-  const focusEditorSurface = useCallback(() => {
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => {
-        document.querySelector<HTMLElement>("[data-glyph-editor='true']")?.focus();
-      });
     });
   }, []);
 
@@ -120,15 +110,6 @@ export const SidebarTreeNode = memo(function SidebarTreeNode({
     setShowMenu((prev) => !prev);
   };
 
-  const handleTogglePinnedFile = () => {
-    if (!onTogglePinnedFile) {
-      return;
-    }
-
-    onTogglePinnedFile(node.path);
-    setShowMenu(false);
-    focusMenuButton();
-  };
   const dragHandlers = draggable
     ? {
         draggable: true,
@@ -357,14 +338,35 @@ export const SidebarTreeNode = memo(function SidebarTreeNode({
         }}
       >
         
-        <FileIcon
-          size={12}
-          className={`mr-2 shrink-0 transition-colors ${
-            isActive
-              ? "text-sidebar-accent-foreground/70"
-              : "text-muted-foreground group-hover/file-row:text-sidebar-accent-foreground/70"
-          }`}
-        />
+        <span className="relative flex h-4 w-4 shrink-0 items-center justify-center mr-2">
+          <FileIcon
+            size={12}
+            className={`transition-[opacity,color] duration-200 ${
+              isPinned
+                ? "opacity-0"
+                : isActive
+                  ? "text-sidebar-accent-foreground/70 group-hover/file-row:opacity-0"
+                  : "text-muted-foreground group-hover/file-row:text-sidebar-accent-foreground/70 group-hover/file-row:opacity-0"
+            }`}
+          />
+          <button
+            type="button"
+            className={`absolute flex items-center justify-center transition-[opacity,color] duration-200 cursor-pointer hover:text-foreground ${
+              isPinned
+                ? isActive
+                  ? "opacity-100 text-sidebar-accent-foreground/70"
+                  : "opacity-100 text-muted-foreground"
+                : "opacity-0 group-hover/file-row:opacity-100 group-hover/file-row:text-sidebar-accent-foreground/70"
+            }`}
+            onClick={(event) => {
+              event.stopPropagation();
+              onTogglePinnedFile?.(node.path);
+            }}
+            aria-label={isPinned ? "Unpin note" : "Pin note"}
+          >
+            <PinIcon size={12} />
+          </button>
+        </span>
         {isRenaming ? (
           <Input
             ref={renameInputRef}
@@ -393,11 +395,6 @@ export const SidebarTreeNode = memo(function SidebarTreeNode({
             {displayFileName}
           </Button>
         )}
-        {isPinned ? (
-          <span className="ml-2 rounded-full border border-sidebar-accent/30 bg-sidebar-accent/60 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.16em] text-sidebar-accent-foreground">
-            Pinned
-          </span>
-        ) : null}
         {!isRenaming ? (
           <div className="relative ml-1 shrink-0">
             <Tooltip>
@@ -421,23 +418,6 @@ export const SidebarTreeNode = memo(function SidebarTreeNode({
 
       {renderMenu(
         <>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-auto w-full justify-start gap-2 rounded-none px-2.5 py-1.5 text-sm"
-            onClick={(event) => {
-              event.stopPropagation();
-              handleTogglePinnedFile();
-            }}
-            type="button"
-          >
-            {isPinned ? (
-              <PinOffIcon size={14} className="opacity-70" />
-            ) : (
-              <PinIcon size={14} className="opacity-70" />
-            )}
-            {pinLabel}
-          </Button>
           <Button
             variant="ghost"
             size="sm"

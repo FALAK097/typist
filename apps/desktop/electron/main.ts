@@ -542,9 +542,16 @@ function buildApplicationMenu(shortcuts: AppSettings["shortcuts"]) {
     const keys = resolvedShortcuts.find((shortcut) => shortcut.id === id)?.keys;
     return keys ? toElectronAccelerator(keys) : undefined;
   };
+  const focusModeItem: Electron.MenuItemConstructorOptions = {
+    label: "Toggle Focus Mode",
+    accelerator: getAccelerator("focus-mode"),
+    click: () =>
+      mainWindow?.webContents.send("app:command", "focus-mode" satisfies AppCommand),
+  };
+
   const viewSubmenu: Electron.MenuItemConstructorOptions[] = isDev
-    ? [{ role: "reload" }, { role: "forceReload" }, { role: "toggleDevTools" }]
-    : [{ role: "togglefullscreen" }];
+    ? [{ role: "reload" }, { role: "forceReload" }, { role: "toggleDevTools" }, { type: "separator" }, focusModeItem]
+    : [{ role: "togglefullscreen" }, { type: "separator" }, focusModeItem];
 
   const menuTemplate: Electron.MenuItemConstructorOptions[] = [
     {

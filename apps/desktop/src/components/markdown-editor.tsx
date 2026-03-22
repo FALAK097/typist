@@ -303,6 +303,7 @@ export const MarkdownEditor = ({
   breadcrumbs,
   saveStateLabel,
   wordCount,
+  readingTime,
   onChange,
   onToggleSidebar,
   isSidebarCollapsed,
@@ -331,8 +332,6 @@ export const MarkdownEditor = ({
   showOutline = true,
   onToggleFocusMode,
   focusModeShortcut,
-  onOpenNewWindow,
-  onDeleteNote,
   onTogglePinnedFile,
   folderRevealLabel,
   outlineJumpRequest,
@@ -1309,36 +1308,38 @@ export const MarkdownEditor = ({
                   <RevealInFolderIcon size={14} className="opacity-70 shrink-0" />
                   {revealInFolderLabel}
                 </Button>
-                {onOpenNewWindow ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto w-full justify-start gap-2 rounded-none px-3 py-1.5 text-sm"
+                  onClick={() => {
+                    void handleExportPDF();
+                    setIsMenuOpen(false);
+                  }}
+                  disabled={!filePath}
+                  type="button"
+                >
+                  <FileDownIcon size={14} className="opacity-70" />
+                  Export as PDF
+                </Button>
+                {onTogglePinnedFile ? (
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-auto w-full justify-start gap-2 rounded-none px-3 py-1.5 text-sm"
                     onClick={() => {
-                      onOpenNewWindow();
+                      onTogglePinnedFile();
                       setIsMenuOpen(false);
                     }}
                     disabled={!filePath}
                     type="button"
                   >
-                    <ExternalLinkIcon size={14} className="opacity-70" />
-                    Open in new window
-                  </Button>
-                ) : null}
-                {onDeleteNote ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-auto w-full justify-start gap-2 rounded-none px-3 py-1.5 text-sm text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => {
-                      onDeleteNote();
-                      setIsMenuOpen(false);
-                    }}
-                    disabled={!filePath}
-                    type="button"
-                  >
-                    <TrashIcon size={14} className="opacity-70" />
-                    Delete note
+                    {isActiveFilePinned ? (
+                      <PinOffIcon size={14} className="opacity-70" />
+                    ) : (
+                      <PinIcon size={14} className="opacity-70" />
+                    )}
+                    {isActiveFilePinned ? "Unpin note" : "Pin note"}
                   </Button>
                 ) : null}
               </div>
@@ -1367,12 +1368,14 @@ export const MarkdownEditor = ({
             return;
           }
 
+          const containerRect = container.getBoundingClientRect();
+          const remainingScroll = container.scrollHeight - container.scrollTop - container.clientHeight;
+
           let activeId = headings[0].id;
           for (const heading of headings) {
             const nodeDom = editor.view.nodeDOM(heading.pos - 1);
             if (nodeDom instanceof HTMLElement) {
               const rect = nodeDom.getBoundingClientRect();
-              const containerRect = container.getBoundingClientRect();
               // Add a bit more tolerance so if we jump to 40px, it comfortably highlights
               if (rect.top <= containerRect.top + 120) {
                 activeId = heading.id;
@@ -1382,8 +1385,10 @@ export const MarkdownEditor = ({
             }
           }
           
-          // Check if scrolled to the absolute bottom
-          if (Math.abs(container.scrollHeight - container.scrollTop - container.clientHeight) < 10) {
+          // When near the bottom of the document, activate the last heading.
+          // Use a generous threshold to account for bottom padding (pb-32 = 128px),
+          // sub-pixel rounding on high-DPI displays, and floating footer overlays.
+          if (remainingScroll < 150) {
             activeId = headings[headings.length - 1].id;
           }
           
@@ -1391,8 +1396,9 @@ export const MarkdownEditor = ({
         }}
       >
         {tableControls.active ? (
-          <div className="pointer-events-none absolute top-4 right-6 z-20">
-            <div className="pointer-events-auto flex flex-wrap items-center gap-2 rounded-2xl border border-border/70 bg-card/95 px-3 py-2 shadow-lg supports-backdrop-filter:backdrop-blur-sm">
+          <div className="sticky top-0 z-20 h-0 overflow-visible">
+            <div className={`pointer-events-none flex justify-end pt-4 ${shouldShowOutlineRail ? "xl:pr-[316px]" : "pr-6"}`}>
+              <div className="pointer-events-auto flex flex-wrap items-center gap-2 rounded-2xl border border-border/70 bg-card/95 px-3 py-2 shadow-lg supports-backdrop-filter:backdrop-blur-sm">
               <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                 Table
               </span>
@@ -1447,6 +1453,7 @@ export const MarkdownEditor = ({
               >
                 Delete Table
               </Button>
+              </div>
             </div>
           </div>
         ) : null}
@@ -1533,13 +1540,13 @@ export const MarkdownEditor = ({
         </aside>
       ) : null}
       <div
-        className={`absolute bottom-6 flex items-center gap-3 rounded-full border border-border bg-card/80 px-3 py-1.5 shadow-sm z-30 pointer-events-none ${
-          shouldShowOutlineRail ? "xl:right-[326px]" : "right-10"
-        }`}
+        className="absolute bottom-6 right-10 flex items-center gap-3 rounded-full border border-border bg-card/80 px-3 py-1.5 shadow-sm z-30 pointer-events-none"
       >
         <div className="flex items-center gap-2 text-muted-foreground text-xs">
           <span>{wordCount} words</span>
         </div>
+        <div className="w-[1px] h-3 bg-border" />
+        <span className="text-xs text-muted-foreground">{readingTime} min read</span>
         <div className="w-[1px] h-3 bg-border" />
         <p className="text-xs font-medium text-foreground m-0">{saveStateLabel}</p>
       </div>
