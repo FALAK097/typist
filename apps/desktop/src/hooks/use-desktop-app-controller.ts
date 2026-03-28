@@ -40,6 +40,7 @@ const EMPTY_NOTE_NAME = "Untitled";
 const NOTE_NAME_SAFE_CHAR_PATTERN = /[^a-zA-Z0-9-_\s]/g;
 const TITLE_PREFIX_PATTERN = /^#+\s*/;
 const NOTE_NAME_MAX_LENGTH = 50;
+const APP_CHANGELOG_URL = "https://github.com/FALAK097/glyph/blob/main/CHANGELOG.md";
 
 const getDraftTitleLine = (content: string) =>
   content.split(/\r?\n/, 1)[0]?.replace(TITLE_PREFIX_PATTERN, "").trim() ?? "";
@@ -1257,7 +1258,30 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
   );
 
   const triggerUpdateAction = useCallback(async () => {
-    if (!appInfo?.updatesEnabled || !updateState) {
+    if (!updateState) {
+      return;
+    }
+
+    if (
+      updateState.recentlyInstalledVersion &&
+      updateState.status !== "available" &&
+      updateState.status !== "downloading" &&
+      updateState.status !== "downloaded"
+    ) {
+      await glyph.openExternal(APP_CHANGELOG_URL);
+      return;
+    }
+
+    if (
+      appInfo?.updatesMode === "manual" &&
+      updateState.status === "available" &&
+      updateState.releasePageUrl
+    ) {
+      await glyph.openExternal(updateState.releasePageUrl);
+      return;
+    }
+
+    if (!appInfo?.updatesEnabled || appInfo.updatesMode === "none") {
       return;
     }
 
@@ -1278,7 +1302,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     ) {
       await glyph.checkForUpdates();
     }
-  }, [appInfo?.updatesEnabled, glyph, updateState]);
+  }, [appInfo?.updatesEnabled, appInfo?.updatesMode, glyph, updateState]);
 
   return {
     activeFile,

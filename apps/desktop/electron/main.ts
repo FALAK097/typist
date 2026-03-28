@@ -45,6 +45,15 @@ const localAssetProtocol = "glyph-local";
 const APP_NAME = "Glyph";
 const STARTUP_LIGHT_BACKGROUND = "#f8f7fb";
 const STARTUP_DARK_BACKGROUND = "#1f1b26";
+const GITHUB_RELEASES_URL = "https://github.com/FALAK097/glyph/releases";
+const GITHUB_LATEST_RELEASE_API_URL = "https://api.github.com/repos/FALAK097/glyph/releases/latest";
+
+type PersistedUpdateState = {
+  stagedVersion: string | null;
+  stagedReleaseName: string | null;
+  stagedReleaseNotes: string | null;
+  recentlyInstalledVersion: string | null;
+};
 
 // Set app name early
 app.setName(APP_NAME);
@@ -68,6 +77,15 @@ let updateCheckInterval: NodeJS.Timeout | null = null;
 const MARKDOWN_EXTENSIONS = [".md", ".mdx", ".markdown"] as const;
 const UPDATE_CHECK_INTERVAL_MS = 1000 * 60 * 60 * 6;
 
+function createDefaultPersistedUpdateState(): PersistedUpdateState {
+  return {
+    stagedVersion: null,
+    stagedReleaseName: null,
+    stagedReleaseNotes: null,
+    recentlyInstalledVersion: null,
+  };
+}
+
 function buildRendererFailurePage() {
   const message = isDev
     ? "Check the dev server logs and restart <code>pnpm dev:desktop</code>."
@@ -82,6 +100,8 @@ function createDefaultUpdateState(): UpdateState {
     currentVersion: app.getVersion(),
     availableVersion: null,
     downloadedVersion: null,
+    recentlyInstalledVersion: null,
+    releasePageUrl: null,
     releaseName: null,
     releaseNotes: null,
     progressPercent: null,
@@ -91,14 +111,35 @@ function createDefaultUpdateState(): UpdateState {
 }
 
 let updateState: UpdateState = createDefaultUpdateState();
+let persistedUpdateState = createDefaultPersistedUpdateState();
+let persistedUpdateStateWritePromise: Promise<PersistedUpdateState> | null = null;
+
+function getUpdatesMode(): AppInfo["updatesMode"] {
+  if (!app.isPackaged || isDev) {
+    return "none";
+  }
+
+  if (process.platform === "win32") {
+    return "automatic";
+  }
+
+  if (process.platform === "darwin") {
+    return "manual";
+  }
+
+  return "none";
+}
 
 function getAppInfo(): AppInfo {
+  const updatesMode = getUpdatesMode();
+
   return {
     name: APP_NAME,
     version: app.getVersion(),
     isPackaged: app.isPackaged && !isDev,
     platform: process.platform,
-    updatesEnabled: app.isPackaged && !isDev,
+    updatesEnabled: updatesMode !== "none",
+    updatesMode,
   };
 }
 
@@ -137,14 +178,278 @@ function normalizeReleaseNotes(
   return null;
 }
 
+function normalizeVersion(version: string) {
+  return version.trim().replace(/^v/i, "");
+}
+
+function compareVersions(left: string, right: string) {
+  const leftParts = normalizeVersion(left)
+    .split(/[^0-9]+/)
+    .filter(Boolean)
+    .map((part) => Number.parseInt(part, 10));
+  const rightParts = normalizeVersion(right)
+    .split(/[^0-9]+/)
+    .filter(Boolean)
+    .map((part) => Number.parseInt(part, 10));
+  const maxLength = Math.max(leftParts.length, rightParts.length);
+
+  for (let index = 0; index < maxLength; index += 1) {
+    const leftPart = leftParts[index] ?? 0;
+    const rightPart = rightParts[index] ?? 0;
+
+    if (leftPart > rightPart) {
+      return 1;
+    }
+
+    if (leftPart < rightPart) {
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
+type GitHubLatestReleaseResponse = {
+  tag_name?: string;
+  name?: string | null;
+  body?: string | null;
+  html_url?: string;
+};
+
+async function fetchLatestGitHubRelease() {
+  const response = await net.fetch(GITHUB_LATEST_RELEASE_API_URL, {
+    headers: {
+      Accept: "application/vnd.github+json",
+      "User-Agent": APP_NAME,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`GitHub release lookup failed with status ${response.status}.`);
+  }
+
+  const payload = (await response.json()) as GitHubLatestReleaseResponse;
+  const version = sanitizeNullableString(payload.tag_name);
+
+  if (!version) {
+    throw new Error("GitHub latest release did not include a version tag.");
+  }
+
+  return {
+    version: normalizeVersion(version),
+    releaseName: sanitizeNullableString(payload.name) ?? `${APP_NAME} ${normalizeVersion(version)}`,
+    releaseNotes: sanitizeNullableString(payload.body),
+    releasePageUrl: sanitizeNullableString(payload.html_url) ?? GITHUB_RELEASES_URL,
+  };
+}
+
+function getPersistedUpdateStatePath() {
+  return path.join(app.getPath("userData"), "update-state.json");
+}
+
+function sanitizeNullableString(value: unknown) {
+  return typeof value === "string" && value.trim().length > 0 ? value : null;
+}
+
+function sanitizePersistedUpdateState(input: unknown): PersistedUpdateState {
+  if (!input || typeof input !== "object") {
+    return createDefaultPersistedUpdateState();
+  }
+
+  const candidate = input as Record<string, unknown>;
+  return {
+    stagedVersion: sanitizeNullableString(candidate.stagedVersion),
+    stagedReleaseName: sanitizeNullableString(candidate.stagedReleaseName),
+    stagedReleaseNotes: sanitizeNullableString(candidate.stagedReleaseNotes),
+    recentlyInstalledVersion: sanitizeNullableString(candidate.recentlyInstalledVersion),
+  };
+}
+
+async function loadPersistedUpdateState() {
+  try {
+    const raw = await fs.readFile(getPersistedUpdateStatePath(), "utf8");
+    return sanitizePersistedUpdateState(JSON.parse(raw));
+  } catch {
+    return createDefaultPersistedUpdateState();
+  }
+}
+
+async function savePersistedUpdateState(next: PersistedUpdateState) {
+  const statePath = getPersistedUpdateStatePath();
+  await fs.mkdir(path.dirname(statePath), { recursive: true });
+  await fs.writeFile(statePath, JSON.stringify(next, null, 2), "utf8");
+  return next;
+}
+
+function queuePersistedUpdateStateWrite(next: PersistedUpdateState) {
+  persistedUpdateState = next;
+
+  const write = async () => {
+    try {
+      return await savePersistedUpdateState(next);
+    } catch (error) {
+      console.error("Failed to persist updater state:", error);
+      return next;
+    }
+  };
+
+  persistedUpdateStateWritePromise = (
+    persistedUpdateStateWritePromise ?? Promise.resolve(next)
+  ).then(write, write);
+
+  return persistedUpdateStateWritePromise;
+}
+
+function persistUpdateStatePatch(patch: Partial<PersistedUpdateState>) {
+  const next = {
+    ...persistedUpdateState,
+    ...patch,
+  };
+
+  void queuePersistedUpdateStateWrite(next);
+}
+
+async function hydratePersistedUpdateState() {
+  const loadedState = await loadPersistedUpdateState();
+  const currentVersion = app.getVersion();
+  let nextPersistedUpdateState = loadedState;
+
+  if (loadedState.stagedVersion === currentVersion) {
+    nextPersistedUpdateState = {
+      ...loadedState,
+      stagedVersion: null,
+      stagedReleaseName: null,
+      stagedReleaseNotes: null,
+      recentlyInstalledVersion: currentVersion,
+    };
+  } else if (
+    loadedState.recentlyInstalledVersion &&
+    loadedState.recentlyInstalledVersion !== currentVersion
+  ) {
+    nextPersistedUpdateState = {
+      ...loadedState,
+      recentlyInstalledVersion: null,
+    };
+  }
+
+  persistedUpdateState = nextPersistedUpdateState;
+
+  if (JSON.stringify(nextPersistedUpdateState) !== JSON.stringify(loadedState)) {
+    void queuePersistedUpdateStateWrite(nextPersistedUpdateState);
+  }
+
+  if (
+    nextPersistedUpdateState.stagedVersion &&
+    nextPersistedUpdateState.stagedVersion !== currentVersion
+  ) {
+    setUpdateState({
+      status: "downloaded",
+      availableVersion: nextPersistedUpdateState.stagedVersion,
+      downloadedVersion: nextPersistedUpdateState.stagedVersion,
+      recentlyInstalledVersion: nextPersistedUpdateState.recentlyInstalledVersion,
+      releasePageUrl: null,
+      releaseName: nextPersistedUpdateState.stagedReleaseName,
+      releaseNotes: nextPersistedUpdateState.stagedReleaseNotes,
+      progressPercent: 100,
+      checkedAt: new Date().toISOString(),
+      errorMessage: null,
+    });
+    return;
+  }
+
+  setUpdateState({
+    recentlyInstalledVersion: nextPersistedUpdateState.recentlyInstalledVersion,
+  });
+}
+
 function shouldPreserveUpdateState(updateStatus: UpdateState["status"]) {
   return updateStatus === "downloading" || updateStatus === "downloaded";
 }
 
+function handleAutoUpdaterError(error: unknown) {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  const checkedAt = new Date().toISOString();
+
+  if (updateState.status === "downloaded") {
+    setUpdateState({
+      checkedAt,
+      errorMessage,
+      progressPercent: 100,
+    });
+    return;
+  }
+
+  if (updateState.status === "downloading" || updateState.status === "available") {
+    setUpdateState({
+      status: "available",
+      checkedAt,
+      errorMessage,
+      progressPercent: null,
+    });
+    return;
+  }
+
+  setUpdateState({
+    status: "error",
+    checkedAt,
+    errorMessage,
+    progressPercent: null,
+  });
+}
+
+async function checkForManualReleaseUpdates() {
+  try {
+    const latestRelease = await fetchLatestGitHubRelease();
+    const checkedAt = new Date().toISOString();
+
+    if (compareVersions(latestRelease.version, app.getVersion()) <= 0) {
+      setUpdateState({
+        status: "not-available",
+        availableVersion: null,
+        downloadedVersion: null,
+        releasePageUrl: null,
+        releaseName: null,
+        releaseNotes: null,
+        checkedAt,
+        errorMessage: null,
+        progressPercent: null,
+      });
+      return updateState;
+    }
+
+    setUpdateState({
+      status: "available",
+      availableVersion: latestRelease.version,
+      downloadedVersion: null,
+      releasePageUrl: latestRelease.releasePageUrl,
+      releaseName: latestRelease.releaseName,
+      releaseNotes: latestRelease.releaseNotes,
+      checkedAt,
+      errorMessage: null,
+      progressPercent: null,
+    });
+  } catch (error) {
+    setUpdateState({
+      status: "error",
+      availableVersion: null,
+      downloadedVersion: null,
+      releaseName: null,
+      releaseNotes: null,
+      checkedAt: new Date().toISOString(),
+      errorMessage: error instanceof Error ? error.message : String(error),
+      progressPercent: null,
+      releasePageUrl: null,
+    });
+  }
+
+  return updateState;
+}
+
 function wireAutoUpdater() {
-  if (!app.isPackaged || isDev) {
+  if (getUpdatesMode() !== "automatic") {
     setUpdateState({
       status: "idle",
+      releasePageUrl: null,
       checkedAt: new Date().toISOString(),
       errorMessage: null,
     });
@@ -169,6 +474,7 @@ function wireAutoUpdater() {
 
     setUpdateState({
       status: "checking",
+      releasePageUrl: null,
       checkedAt: new Date().toISOString(),
       errorMessage: null,
       progressPercent: null,
@@ -180,12 +486,17 @@ function wireAutoUpdater() {
       status: "available",
       availableVersion: info.version ?? null,
       downloadedVersion: null,
+      releasePageUrl: null,
       releaseName: info.releaseName ?? null,
       releaseNotes: normalizeReleaseNotes(info.releaseNotes),
       checkedAt: new Date().toISOString(),
       errorMessage: null,
       progressPercent: null,
     });
+
+    if (updateState.status !== "downloading" && updateState.status !== "downloaded") {
+      void downloadAppUpdate();
+    }
   });
 
   autoUpdater.on("update-not-available", () => {
@@ -201,6 +512,7 @@ function wireAutoUpdater() {
       status: "not-available",
       availableVersion: null,
       downloadedVersion: null,
+      releasePageUrl: null,
       releaseName: null,
       releaseNotes: null,
       checkedAt: new Date().toISOString(),
@@ -218,12 +530,22 @@ function wireAutoUpdater() {
   });
 
   autoUpdater.on("update-downloaded", (info) => {
+    const releaseNotes = normalizeReleaseNotes(info.releaseNotes);
+
+    persistUpdateStatePatch({
+      stagedVersion: info.version ?? null,
+      stagedReleaseName: info.releaseName ?? null,
+      stagedReleaseNotes: releaseNotes,
+    });
+
     setUpdateState({
       status: "downloaded",
       availableVersion: info.version ?? null,
       downloadedVersion: info.version ?? null,
+      recentlyInstalledVersion: persistedUpdateState.recentlyInstalledVersion,
+      releasePageUrl: null,
       releaseName: info.releaseName ?? null,
-      releaseNotes: normalizeReleaseNotes(info.releaseNotes),
+      releaseNotes,
       checkedAt: new Date().toISOString(),
       errorMessage: null,
       progressPercent: 100,
@@ -231,17 +553,23 @@ function wireAutoUpdater() {
   });
 
   autoUpdater.on("error", (error) => {
-    setUpdateState({
-      status: "error",
-      checkedAt: new Date().toISOString(),
-      errorMessage: error.message,
-    });
+    handleAutoUpdaterError(error);
   });
 }
 
 async function checkForAppUpdates() {
-  if (!app.isPackaged || isDev) {
+  const updatesMode = getUpdatesMode();
+
+  if (updatesMode === "none") {
     return updateState;
+  }
+
+  if (updatesMode === "manual") {
+    if (updateState.status === "downloading" || updateState.status === "downloaded") {
+      return updateState;
+    }
+
+    return checkForManualReleaseUpdates();
   }
 
   if (shouldPreserveUpdateState(updateState.status)) {
@@ -251,18 +579,14 @@ async function checkForAppUpdates() {
   try {
     await autoUpdater.checkForUpdates();
   } catch (error) {
-    setUpdateState({
-      status: "error",
-      checkedAt: new Date().toISOString(),
-      errorMessage: error instanceof Error ? error.message : String(error),
-    });
+    handleAutoUpdaterError(error);
   }
 
   return updateState;
 }
 
 async function downloadAppUpdate() {
-  if (!app.isPackaged || isDev) {
+  if (getUpdatesMode() !== "automatic") {
     return updateState;
   }
 
@@ -272,6 +596,7 @@ async function downloadAppUpdate() {
 
   setUpdateState({
     status: "downloading",
+    releasePageUrl: null,
     progressPercent: 0,
     errorMessage: null,
   });
@@ -279,11 +604,7 @@ async function downloadAppUpdate() {
   try {
     await autoUpdater.downloadUpdate();
   } catch (error) {
-    setUpdateState({
-      status: "error",
-      checkedAt: new Date().toISOString(),
-      errorMessage: error instanceof Error ? error.message : String(error),
-    });
+    handleAutoUpdaterError(error);
   }
 
   return updateState;
@@ -1318,12 +1639,20 @@ ipcMain.handle("app:checkForUpdates", async () => checkForAppUpdates());
 ipcMain.handle("app:downloadUpdate", async () => downloadAppUpdate());
 
 ipcMain.handle("app:installUpdate", async () => {
-  if (!app.isPackaged || isDev || updateState.status !== "downloaded") {
+  if (getUpdatesMode() !== "automatic" || updateState.status !== "downloaded") {
     return;
   }
 
+  setUpdateState({
+    errorMessage: null,
+  });
+
   setImmediate(() => {
-    autoUpdater.quitAndInstall();
+    try {
+      autoUpdater.quitAndInstall(false, true);
+    } catch (error) {
+      handleAutoUpdaterError(error);
+    }
   });
 });
 
@@ -1481,6 +1810,10 @@ app
   .then(async () => {
     app.setAboutPanelOptions({ applicationName: APP_NAME });
     wireAutoUpdater();
+
+    if (getUpdatesMode() === "automatic") {
+      await hydratePersistedUpdateState();
+    }
 
     if (process.platform === "darwin" && app.dock) {
       app.dock.setIcon(nativeImage.createFromPath(iconPath));
