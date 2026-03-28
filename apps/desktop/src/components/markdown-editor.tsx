@@ -11,6 +11,7 @@ import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
 import StarterKit from "@tiptap/starter-kit";
 import type { Editor } from "@tiptap/core";
+import { TextSelection } from "@tiptap/pm/state";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { Markdown } from "tiptap-markdown";
 
@@ -381,6 +382,34 @@ export const MarkdownEditor = ({
     setOutlineItems(items);
     outlineItemsRef.current = items;
   }, []);
+
+  const focusEditorWithoutScroll = useCallback(
+    (selection: { from: number; to: number }, resetScrollTop: boolean) => {
+      const nextEditor = liveEditorRef.current;
+      if (!nextEditor) {
+        return;
+      }
+
+      const maxPosition = Math.max(1, nextEditor.state.doc.content.size);
+      const nextSelection = {
+        from: clamp(selection.from, 1, maxPosition),
+        to: clamp(selection.to, 1, maxPosition),
+      };
+
+      selectionSnapshotRef.current = nextSelection;
+      nextEditor.view.dispatch(
+        nextEditor.state.tr.setSelection(
+          TextSelection.create(nextEditor.state.doc, nextSelection.from, nextSelection.to),
+        ),
+      );
+      nextEditor.view.dom.focus({ preventScroll: true });
+
+      if (resetScrollTop && scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = 0;
+      }
+    },
+    [],
+  );
 
   const effectiveUpdateState = devPreviewUpdateState ?? updateState;
 
@@ -805,25 +834,19 @@ export const MarkdownEditor = ({
 
     window.requestAnimationFrame(() => {
       if (editorFocusRequest.mode === "start") {
-        liveEditorRef.current?.chain().focus().setTextSelection(1).run();
-        if (scrollContainerRef.current) {
-          scrollContainerRef.current.scrollTop = 0;
-        }
+        focusEditorWithoutScroll({ from: 1, to: 1 }, true);
         return;
       }
 
-      const maxPosition = Math.max(1, editor.state.doc.content.size);
-      const { from, to } = selectionSnapshotRef.current;
-      liveEditorRef.current
-        ?.chain()
-        .focus()
-        .setTextSelection({
-          from: clamp(from, 1, maxPosition),
-          to: clamp(to, 1, maxPosition),
-        })
-        .run();
+      if (editorFocusRequest.mode === "end") {
+        const endPosition = Math.max(1, editor.state.doc.content.size);
+        focusEditorWithoutScroll({ from: endPosition, to: endPosition }, true);
+        return;
+      }
+
+      focusEditorWithoutScroll(selectionSnapshotRef.current, false);
     });
-  }, [editor, editorFocusRequest]);
+  }, [editor, editorFocusRequest, focusEditorWithoutScroll]);
 
   useEffect(() => {
     if (!outlineJumpRequest || !editor) {

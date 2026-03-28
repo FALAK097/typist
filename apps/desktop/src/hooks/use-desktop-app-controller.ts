@@ -104,7 +104,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
   const [expandedFolderPaths, setExpandedFolderPaths] = useState<string[]>([]);
   const [hasHydratedSidebar, setHasHydratedSidebar] = useState(false);
   const [editorFocusRequest, setEditorFocusRequest] = useState<{
-    mode: "start" | "preserve";
+    mode: "start" | "end" | "preserve";
     nonce: number;
   } | null>(null);
   const [outlineJumpRequest, setOutlineJumpRequest] = useState<{
@@ -175,7 +175,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     [setWorkspace],
   );
 
-  const requestEditorFocus = useCallback((mode: "start" | "preserve") => {
+  const requestEditorFocus = useCallback((mode: "start" | "end" | "preserve") => {
     window.requestAnimationFrame(() => {
       editorFocusNonceRef.current += 1;
       setEditorFocusRequest({
@@ -196,7 +196,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
       if (options?.recordHistory) {
         pushHistory(file.path);
       }
-      requestEditorFocus("start");
+      requestEditorFocus("end");
     },
     [glyph, pushHistory, requestEditorFocus, rootPath, setActiveFile],
   );
@@ -218,6 +218,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
         nextSettings.sidebar.items,
       );
       const nextExpandedFolders = new Set(nextSettings.sidebar.expandedFolders);
+      let bootFocusMode: "start" | "end" = "start";
 
       const target = await glyph.getPendingExternalPath();
       if (target) {
@@ -229,6 +230,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
             nextSidebarNodes = upsertSidebarFolder(nextSidebarNodes, workspace);
             if (workspace.activeFile) {
               nextSidebarNodes = upsertSidebarFile(nextSidebarNodes, workspace.activeFile);
+              bootFocusMode = "end";
             }
             nextExpandedFolders.add(workspace.rootPath);
           }
@@ -248,6 +250,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
             Boolean(workspace && isFileInsideWorkspace(file.path, workspace.rootPath)),
           );
           nextSidebarNodes = upsertSidebarFile(nextSidebarNodes, file);
+          bootFocusMode = "end";
         }
       } else {
         const workspace = await glyph.openDefaultWorkspace();
@@ -257,6 +260,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
           nextSidebarNodes = upsertSidebarFolder(nextSidebarNodes, workspace);
           if (workspace.activeFile) {
             nextSidebarNodes = upsertSidebarFile(nextSidebarNodes, workspace.activeFile);
+            bootFocusMode = "end";
           }
           nextExpandedFolders.add(workspace.rootPath);
         }
@@ -265,7 +269,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
       setSidebarNodes(nextSidebarNodes);
       setExpandedFolderPaths(Array.from(nextExpandedFolders));
       setHasHydratedSidebar(true);
-      requestEditorFocus("start");
+      requestEditorFocus(bootFocusMode);
     };
 
     void boot();

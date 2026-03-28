@@ -2,7 +2,7 @@ import type { UpdateState } from "../shared/workspace";
 import type { OutlineItem } from "@/types/navigation";
 
 export type EditorFocusRequest = {
-  mode: "start" | "preserve";
+  mode: "start" | "end" | "preserve";
   nonce: number;
 };
 
