@@ -330,6 +330,9 @@ export const MarkdownEditor = ({
   outlineJumpRequest,
 }: MarkdownEditorProps) => {
   const lastSyncedMarkdown = useRef(content);
+  const onChangeRef = useRef(onChange);
+  const filePathRef = useRef(filePath);
+  const onOpenLinkedFileRef = useRef(onOpenLinkedFile);
   const isAutoConvertingRef = useRef(false);
   const liveEditorRef = useRef<Editor | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -360,6 +363,18 @@ export const MarkdownEditor = ({
   const [outlineItems, setOutlineItems] = useState<EditorOutlineItem[]>([]);
   const [activeHeadingId, setActiveHeadingId] = useState<string | null>(null);
   const outlineItemsRef = useRef<EditorOutlineItem[]>([]);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  useEffect(() => {
+    filePathRef.current = filePath;
+  }, [filePath]);
+
+  useEffect(() => {
+    onOpenLinkedFileRef.current = onOpenLinkedFile;
+  }, [onOpenLinkedFile]);
 
   const refreshOutline = useCallback((nextEditor: Editor) => {
     const items = collectEditorOutline(nextEditor);
@@ -486,15 +501,15 @@ export const MarkdownEditor = ({
         return openLinkExternally(href);
       }
 
-      const resolved = await window.glyph.resolveLinkTarget(filePath, href);
+      const resolved = await window.glyph.resolveLinkTarget(filePathRef.current, href);
       if (!resolved) {
         showToast("Could not open link", "Link target could not be resolved.");
         return false;
       }
 
       if (resolved.kind === "markdown-file") {
-        if (onOpenLinkedFile) {
-          onOpenLinkedFile(resolved.target);
+        if (onOpenLinkedFileRef.current) {
+          onOpenLinkedFileRef.current(resolved.target);
           return true;
         }
 
@@ -738,7 +753,7 @@ export const MarkdownEditor = ({
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
         const nextMarkdown = (nextEditor.storage as any).markdown.getMarkdown() as string;
         lastSyncedMarkdown.current = nextMarkdown;
-        onChange(nextMarkdown);
+        onChangeRef.current(nextMarkdown);
       },
       onSelectionUpdate: ({ editor: nextEditor }) => {
         liveEditorRef.current = nextEditor;
@@ -750,7 +765,7 @@ export const MarkdownEditor = ({
         refreshImageControls(nextEditor);
       },
     },
-    [filePath],
+    [],
   );
 
   useEffect(() => {
@@ -1476,7 +1491,7 @@ export const MarkdownEditor = ({
             </Button>
           </div>
         ) : null}
-        <EditorContent key={filePath ?? "no-file"} editor={editor} />
+        <EditorContent editor={editor} />
       </div>
       {shouldShowOutlineRail ? (
         <aside className="pointer-events-none absolute right-8 top-[88px] z-20 hidden xl:block w-[240px] animate-in fade-in slide-in-from-right-2 duration-200 ease-out">
