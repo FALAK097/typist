@@ -36,7 +36,6 @@ import { flattenFiles } from "@/lib/workspace-tree";
 import type { CommandPaletteItem } from "@/types/command-palette";
 
 const toPathKey = (path: string) => normalizePath(path).toLowerCase();
-const EMPTY_RESULTS_FALLBACK_COMMAND_IDS = new Set(["new-note", "open-file", "open-folder"]);
 const EMPTY_NOTE_NAME = "Untitled";
 const NOTE_NAME_SAFE_CHAR_PATTERN = /[^a-zA-Z0-9-_\s]/g;
 const TITLE_PREFIX_PATTERN = /^#+\s*/;
@@ -61,19 +60,6 @@ const getCommittedDraftFileName = (content: string) => {
   }
 
   return `${safeName}.md`;
-};
-
-const dedupePaletteItems = (items: CommandPaletteItem[]) => {
-  const seenIds = new Set<string>();
-
-  return items.filter((item) => {
-    if (seenIds.has(item.id)) {
-      return false;
-    }
-
-    seenIds.add(item.id);
-    return true;
-  });
 };
 
 export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => {
@@ -967,13 +953,10 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
       kind: "file" as const,
       onSelect: () => void openFile(note.path),
     }));
-    const fallbackCommandItems = baseCommands.filter((item) =>
-      EMPTY_RESULTS_FALLBACK_COMMAND_IDS.has(item.id),
-    );
 
-    // Keep default and empty-result states derived from the same command source.
+    // No query: show pinned notes + all commands
     if (!query) {
-      return dedupePaletteItems([...pinnedPaletteItems, ...baseCommands]);
+      return [...pinnedPaletteItems, ...baseCommands];
     }
 
     const items: CommandPaletteItem[] = [];
@@ -1023,9 +1006,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
       });
     });
 
-    const dedupedItems = dedupePaletteItems(items);
-
-    return dedupedItems.length > 0 ? dedupedItems : fallbackCommandItems;
+    return items;
   }, [allSearchableFiles, baseCommands, paletteQuery, openFile, pinnedNotes, searchResults]);
 
   // Reset query when palette closes
