@@ -11,6 +11,7 @@ import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
 import StarterKit from "@tiptap/starter-kit";
 import type { Editor } from "@tiptap/core";
+import { TextSelection } from "@tiptap/pm/state";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { Markdown } from "tiptap-markdown";
 
@@ -296,6 +297,7 @@ export const MarkdownEditor = ({
   content,
   fileName,
   filePath,
+  editorFocusRequest,
   saveStateLabel,
   wordCount,
   readingTime,
@@ -329,12 +331,17 @@ export const MarkdownEditor = ({
   outlineJumpRequest,
 }: MarkdownEditorProps) => {
   const lastSyncedMarkdown = useRef(content);
+  const onChangeRef = useRef(onChange);
+  const filePathRef = useRef(filePath);
+  const onOpenLinkedFileRef = useRef(onOpenLinkedFile);
   const isAutoConvertingRef = useRef(false);
   const liveEditorRef = useRef<Editor | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const tableControlsRef = useRef<TableControlsState>(INACTIVE_TABLE_CONTROLS);
   const toastTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
   const hoveredLinkHideTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const selectionSnapshotRef = useRef({ from: 1, to: 1 });
+  const lastHandledFocusRequestRef = useRef<number | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [toast, setToast] = useState<MarkdownEditorToast | null>(null);
   const [activeDialog, setActiveDialog] = useState<EditorActionType | null>(null);
@@ -358,11 +365,51 @@ export const MarkdownEditor = ({
   const [activeHeadingId, setActiveHeadingId] = useState<string | null>(null);
   const outlineItemsRef = useRef<EditorOutlineItem[]>([]);
 
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  useEffect(() => {
+    filePathRef.current = filePath;
+  }, [filePath]);
+
+  useEffect(() => {
+    onOpenLinkedFileRef.current = onOpenLinkedFile;
+  }, [onOpenLinkedFile]);
+
   const refreshOutline = useCallback((nextEditor: Editor) => {
     const items = collectEditorOutline(nextEditor);
     setOutlineItems(items);
     outlineItemsRef.current = items;
   }, []);
+
+  const focusEditorWithoutScroll = useCallback(
+    (selection: { from: number; to: number }, resetScrollTop: boolean) => {
+      const nextEditor = liveEditorRef.current;
+      if (!nextEditor) {
+        return;
+      }
+
+      const maxPosition = Math.max(1, nextEditor.state.doc.content.size);
+      const nextSelection = {
+        from: clamp(selection.from, 1, maxPosition),
+        to: clamp(selection.to, 1, maxPosition),
+      };
+
+      selectionSnapshotRef.current = nextSelection;
+      nextEditor.view.dispatch(
+        nextEditor.state.tr.setSelection(
+          TextSelection.create(nextEditor.state.doc, nextSelection.from, nextSelection.to),
+        ),
+      );
+      nextEditor.view.dom.focus({ preventScroll: true });
+
+      if (resetScrollTop && scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = 0;
+      }
+    },
+    [],
+  );
 
   const effectiveUpdateState = devPreviewUpdateState ?? updateState;
 
@@ -483,15 +530,15 @@ export const MarkdownEditor = ({
         return openLinkExternally(href);
       }
 
-      const resolved = await window.glyph.resolveLinkTarget(filePath, href);
+      const resolved = await window.glyph.resolveLinkTarget(filePathRef.current, href);
       if (!resolved) {
         showToast("Could not open link", "Link target could not be resolved.");
         return false;
       }
 
       if (resolved.kind === "markdown-file") {
-        if (onOpenLinkedFile) {
-          onOpenLinkedFile(resolved.target);
+        if (onOpenLinkedFileRef.current) {
+          onOpenLinkedFileRef.current(resolved.target);
           return true;
         }
 
@@ -724,6 +771,10 @@ export const MarkdownEditor = ({
           return;
         }
 
+        selectionSnapshotRef.current = {
+          from: nextEditor.state.selection.from,
+          to: nextEditor.state.selection.to,
+        };
         refreshTableControls(nextEditor);
         refreshImageControls(nextEditor);
         refreshOutline(nextEditor);
@@ -731,15 +782,19 @@ export const MarkdownEditor = ({
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
         const nextMarkdown = (nextEditor.storage as any).markdown.getMarkdown() as string;
         lastSyncedMarkdown.current = nextMarkdown;
-        onChange(nextMarkdown);
+        onChangeRef.current(nextMarkdown);
       },
       onSelectionUpdate: ({ editor: nextEditor }) => {
         liveEditorRef.current = nextEditor;
+        selectionSnapshotRef.current = {
+          from: nextEditor.state.selection.from,
+          to: nextEditor.state.selection.to,
+        };
         refreshTableControls(nextEditor);
         refreshImageControls(nextEditor);
       },
     },
-    [filePath],
+    [],
   );
 
   useEffect(() => {
@@ -767,17 +822,31 @@ export const MarkdownEditor = ({
   }, [editor]);
 
   useEffect(() => {
-    if (!editor || !filePath) {
+    if (!editorFocusRequest || !editor) {
       return;
     }
 
+    if (lastHandledFocusRequestRef.current === editorFocusRequest.nonce) {
+      return;
+    }
+
+    lastHandledFocusRequestRef.current = editorFocusRequest.nonce;
+
     window.requestAnimationFrame(() => {
-      liveEditorRef.current?.commands.setTextSelection(1);
-      if (scrollContainerRef.current) {
-        scrollContainerRef.current.scrollTop = 0;
+      if (editorFocusRequest.mode === "start") {
+        focusEditorWithoutScroll({ from: 1, to: 1 }, true);
+        return;
       }
+
+      if (editorFocusRequest.mode === "end") {
+        const endPosition = Math.max(1, editor.state.doc.content.size);
+        focusEditorWithoutScroll({ from: endPosition, to: endPosition }, true);
+        return;
+      }
+
+      focusEditorWithoutScroll(selectionSnapshotRef.current, false);
     });
-  }, [editor, filePath]);
+  }, [editor, editorFocusRequest, focusEditorWithoutScroll]);
 
   useEffect(() => {
     if (!outlineJumpRequest || !editor) {
@@ -1445,7 +1514,7 @@ export const MarkdownEditor = ({
             </Button>
           </div>
         ) : null}
-        <EditorContent key={filePath ?? "no-file"} editor={editor} />
+        <EditorContent editor={editor} />
       </div>
       {shouldShowOutlineRail ? (
         <aside className="pointer-events-none absolute right-8 top-[88px] z-20 hidden xl:block w-[240px] animate-in fade-in slide-in-from-right-2 duration-200 ease-out">

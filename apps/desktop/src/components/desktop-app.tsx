@@ -54,6 +54,7 @@ export const DesktopApp = ({ glyph }: DesktopAppProps) => {
             content={controller.draftContent}
             fileName={controller.activeFile?.name ?? null}
             filePath={controller.activeFile?.path ?? null}
+            editorFocusRequest={controller.editorFocusRequest}
             saveStateLabel={controller.saveStateLabel}
             wordCount={controller.wordCount}
             readingTime={controller.readingTime}
