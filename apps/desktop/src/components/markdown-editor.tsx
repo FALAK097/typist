@@ -153,14 +153,6 @@ type TableControlsState = {
   canDeleteTable: boolean;
 };
 
-type NoteViewState = {
-  selection: {
-    from: number;
-    to: number;
-  };
-  scrollTop: number;
-};
-
 type EditorOutlineItem = OutlineItem & {
   pos: number;
 };
@@ -350,7 +342,6 @@ export const MarkdownEditor = ({
   const hoveredLinkHideTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
   const selectionSnapshotRef = useRef({ from: 1, to: 1 });
   const lastHandledFocusRequestRef = useRef<number | null>(null);
-  const noteViewStateRef = useRef(new Map<string, NoteViewState>());
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [toast, setToast] = useState<MarkdownEditorToast | null>(null);
   const [activeDialog, setActiveDialog] = useState<EditorActionType | null>(null);
@@ -390,20 +381,6 @@ export const MarkdownEditor = ({
     const items = collectEditorOutline(nextEditor);
     setOutlineItems(items);
     outlineItemsRef.current = items;
-  }, []);
-
-  const rememberCurrentNoteViewState = useCallback((partial: Partial<NoteViewState>) => {
-    const currentFilePath = filePathRef.current;
-    if (!currentFilePath) {
-      return;
-    }
-
-    const previousState = noteViewStateRef.current.get(currentFilePath);
-    noteViewStateRef.current.set(currentFilePath, {
-      selection: partial.selection ?? previousState?.selection ?? selectionSnapshotRef.current,
-      scrollTop:
-        partial.scrollTop ?? previousState?.scrollTop ?? scrollContainerRef.current?.scrollTop ?? 0,
-    });
   }, []);
 
   const focusEditorWithoutScroll = useCallback(
@@ -798,9 +775,6 @@ export const MarkdownEditor = ({
           from: nextEditor.state.selection.from,
           to: nextEditor.state.selection.to,
         };
-        rememberCurrentNoteViewState({
-          selection: selectionSnapshotRef.current,
-        });
         refreshTableControls(nextEditor);
         refreshImageControls(nextEditor);
         refreshOutline(nextEditor);
@@ -816,9 +790,6 @@ export const MarkdownEditor = ({
           from: nextEditor.state.selection.from,
           to: nextEditor.state.selection.to,
         };
-        rememberCurrentNoteViewState({
-          selection: selectionSnapshotRef.current,
-        });
         refreshTableControls(nextEditor);
         refreshImageControls(nextEditor);
       },
@@ -868,17 +839,6 @@ export const MarkdownEditor = ({
       }
 
       if (editorFocusRequest.mode === "end") {
-        const savedNoteViewState = filePathRef.current
-          ? noteViewStateRef.current.get(filePathRef.current)
-          : null;
-        if (savedNoteViewState) {
-          focusEditorWithoutScroll(savedNoteViewState.selection, false);
-          if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTop = savedNoteViewState.scrollTop;
-          }
-          return;
-        }
-
         const endPosition = Math.max(1, editor.state.doc.content.size);
         focusEditorWithoutScroll({ from: endPosition, to: endPosition }, true);
         return;
@@ -1413,10 +1373,6 @@ export const MarkdownEditor = ({
           if (!editor) return;
           const container = scrollContainerRef.current;
           if (!container) return;
-
-          rememberCurrentNoteViewState({
-            scrollTop: container.scrollTop,
-          });
 
           const headings = outlineItemsRef.current;
           if (headings.length === 0) {
