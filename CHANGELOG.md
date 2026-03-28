@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.3.1](https://github.com/FALAK097/glyph/compare/v0.3.0...v0.3.1) (2026-03-28)
+
+
+### Bug Fixes
+
+* **desktop:** align palette label and remove header breadcrumbs ([a912f13](https://github.com/FALAK097/glyph/commit/a912f13491c168ab112b3fce63352e404e67aa66))
+* **desktop:** duplication of base commands ([c1191b5](https://github.com/FALAK097/glyph/commit/c1191b5d06c79c8a6e6c9ada2eeec7cfd805f420))
+* **desktop:** focus opened notes at the end without scrolling ([db34107](https://github.com/FALAK097/glyph/commit/db341077e912320ac2aef066a420a46a607d4e78))
+* **desktop:** keep editor mounted during draft activation ([77da9cc](https://github.com/FALAK097/glyph/commit/77da9cc261f6c097446df84a9312a030f9a91426))
+* **desktop:** materialize committed draft notes ([c3780c2](https://github.com/FALAK097/glyph/commit/c3780c2424cba0990d92477e21dcea1095c13ac8))
+* **desktop:** preserve cursor while activating draft notes ([abd8551](https://github.com/FALAK097/glyph/commit/abd85515411485c844727733f018af91a76d45a1))
+* **desktop:** remove command palette fallback actions ([364874e](https://github.com/FALAK097/glyph/commit/364874ebc343514961dfec1497f7d6d522335aaf))
+* **desktop:** restore note cursor position per file ([3731c11](https://github.com/FALAK097/glyph/commit/3731c112ebca230683a0b4158b77a846601403fd))
+* **desktop:** stabilize note creation focus and palette fallbacks ([dd2a3ad](https://github.com/FALAK097/glyph/commit/dd2a3adde3508da98503742bb750bfe7f920e601))
+* **desktop:** title ([a7a6aa1](https://github.com/FALAK097/glyph/commit/a7a6aa128e8cc54a49cf9a096950bf89614007fc))
+* **desktop:** update command palette placeholder and header breadcrumb ([9eaa3c5](https://github.com/FALAK097/glyph/commit/9eaa3c55ceac269d7a4c11b3f2aa6b5178c508af))
+* **desktop:** update command palette placeholder and header breadcrumb ([21549f0](https://github.com/FALAK097/glyph/commit/21549f0ff00d605acfc15d219d777843b5ae595f))
+* **web:** improve mobile header and brew command layout ([35248cf](https://github.com/FALAK097/glyph/commit/35248cff506e3269f3b84698b566c7876209144b))
+* **web:** keep brew copy action top-right on desktop ([84ae6fe](https://github.com/FALAK097/glyph/commit/84ae6fe833ed7a107db7ce5558e9c9e91edd3ca9))
+* **web:** refine mobile nav and brew command actions ([6c815c6](https://github.com/FALAK097/glyph/commit/6c815c6afe01fc94b0745385e7891c59980b5783))
+* **web:** update canonical domain to glyph.falakgala.dev ([e0ea065](https://github.com/FALAK097/glyph/commit/e0ea0651bcb3bb1acc4243702782af21a4eb1f7e))
+
 ## [0.3.0](https://github.com/FALAK097/glyph/compare/v0.2.5...v0.3.0) (2026-03-22)
 
 
