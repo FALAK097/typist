@@ -296,6 +296,7 @@ export const MarkdownEditor = ({
   content,
   fileName,
   filePath,
+  editorFocusRequest,
   saveStateLabel,
   wordCount,
   readingTime,
@@ -329,12 +330,16 @@ export const MarkdownEditor = ({
   outlineJumpRequest,
 }: MarkdownEditorProps) => {
   const lastSyncedMarkdown = useRef(content);
+  const lastFilePathRef = useRef(filePath);
+  const lastContentRef = useRef(content);
   const isAutoConvertingRef = useRef(false);
   const liveEditorRef = useRef<Editor | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const tableControlsRef = useRef<TableControlsState>(INACTIVE_TABLE_CONTROLS);
   const toastTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
   const hoveredLinkHideTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const selectionSnapshotRef = useRef({ from: 1, to: 1 });
+  const lastHandledFocusRequestRef = useRef<number | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [toast, setToast] = useState<MarkdownEditorToast | null>(null);
   const [activeDialog, setActiveDialog] = useState<EditorActionType | null>(null);
@@ -724,6 +729,10 @@ export const MarkdownEditor = ({
           return;
         }
 
+        selectionSnapshotRef.current = {
+          from: nextEditor.state.selection.from,
+          to: nextEditor.state.selection.to,
+        };
         refreshTableControls(nextEditor);
         refreshImageControls(nextEditor);
         refreshOutline(nextEditor);
@@ -735,6 +744,10 @@ export const MarkdownEditor = ({
       },
       onSelectionUpdate: ({ editor: nextEditor }) => {
         liveEditorRef.current = nextEditor;
+        selectionSnapshotRef.current = {
+          from: nextEditor.state.selection.from,
+          to: nextEditor.state.selection.to,
+        };
         refreshTableControls(nextEditor);
         refreshImageControls(nextEditor);
       },
@@ -767,7 +780,12 @@ export const MarkdownEditor = ({
   }, [editor]);
 
   useEffect(() => {
-    if (!editor || !filePath) {
+    const previousFilePath = lastFilePathRef.current;
+    const previousContent = lastContentRef.current;
+    lastFilePathRef.current = filePath;
+    lastContentRef.current = content;
+
+    if (!editor || !filePath || previousFilePath === filePath || previousContent === content) {
       return;
     }
 
@@ -777,7 +795,40 @@ export const MarkdownEditor = ({
         scrollContainerRef.current.scrollTop = 0;
       }
     });
-  }, [editor, filePath]);
+  }, [content, editor, filePath]);
+
+  useEffect(() => {
+    if (!editorFocusRequest || !editor) {
+      return;
+    }
+
+    if (lastHandledFocusRequestRef.current === editorFocusRequest.nonce) {
+      return;
+    }
+
+    lastHandledFocusRequestRef.current = editorFocusRequest.nonce;
+
+    window.requestAnimationFrame(() => {
+      if (editorFocusRequest.mode === "start") {
+        liveEditorRef.current?.chain().focus().setTextSelection(1).run();
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = 0;
+        }
+        return;
+      }
+
+      const maxPosition = Math.max(1, editor.state.doc.content.size);
+      const { from, to } = selectionSnapshotRef.current;
+      liveEditorRef.current
+        ?.chain()
+        .focus()
+        .setTextSelection({
+          from: clamp(from, 1, maxPosition),
+          to: clamp(to, 1, maxPosition),
+        })
+        .run();
+    });
+  }, [editor, editorFocusRequest]);
 
   useEffect(() => {
     if (!outlineJumpRequest || !editor) {

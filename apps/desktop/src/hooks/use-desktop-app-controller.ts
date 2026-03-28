@@ -36,6 +36,45 @@ import { flattenFiles } from "@/lib/workspace-tree";
 import type { CommandPaletteItem } from "@/types/command-palette";
 
 const toPathKey = (path: string) => normalizePath(path).toLowerCase();
+const EMPTY_RESULTS_FALLBACK_COMMAND_IDS = new Set(["new-note", "open-file", "open-folder"]);
+const EMPTY_NOTE_NAME = "Untitled";
+const NOTE_NAME_SAFE_CHAR_PATTERN = /[^a-zA-Z0-9-_\s]/g;
+const TITLE_PREFIX_PATTERN = /^#+\s*/;
+const NOTE_NAME_MAX_LENGTH = 50;
+
+const getDraftTitleLine = (content: string) =>
+  content.split(/\r?\n/, 1)[0]?.replace(TITLE_PREFIX_PATTERN, "").trim() ?? "";
+
+const getDraftNoteName = (content: string) => {
+  const safeName = getDraftTitleLine(content)
+    .replace(NOTE_NAME_SAFE_CHAR_PATTERN, "")
+    .trim()
+    .substring(0, NOTE_NAME_MAX_LENGTH);
+
+  return safeName && safeName !== EMPTY_NOTE_NAME ? safeName : null;
+};
+
+const getCommittedDraftFileName = (content: string) => {
+  const safeName = getDraftNoteName(content);
+  if (!safeName || !/\r?\n/.test(content)) {
+    return null;
+  }
+
+  return `${safeName}.md`;
+};
+
+const dedupePaletteItems = (items: CommandPaletteItem[]) => {
+  const seenIds = new Set<string>();
+
+  return items.filter((item) => {
+    if (seenIds.has(item.id)) {
+      return false;
+    }
+
+    seenIds.add(item.id);
+    return true;
+  });
+};
 
 export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => {
   const {
@@ -78,11 +117,16 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
   const [sidebarNodes, setSidebarNodes] = useState<DirectoryNode[]>([]);
   const [expandedFolderPaths, setExpandedFolderPaths] = useState<string[]>([]);
   const [hasHydratedSidebar, setHasHydratedSidebar] = useState(false);
+  const [editorFocusRequest, setEditorFocusRequest] = useState<{
+    mode: "start" | "preserve";
+    nonce: number;
+  } | null>(null);
   const [outlineJumpRequest, setOutlineJumpRequest] = useState<{
     id: string;
     nonce: number;
   } | null>(null);
   const draftFileCreationRef = useRef<Promise<FileDocument | null> | null>(null);
+  const editorFocusNonceRef = useRef(0);
   const deferredPaletteQuery = useDeferredValue(paletteQuery);
 
   const files = useMemo(() => flattenFiles(tree, rootPath), [rootPath, tree]);
@@ -160,6 +204,16 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     [rootPath, setActiveFile, glyph, pushHistory],
   );
 
+  const requestEditorFocus = useCallback((mode: "start" | "preserve") => {
+    window.requestAnimationFrame(() => {
+      editorFocusNonceRef.current += 1;
+      setEditorFocusRequest({
+        mode,
+        nonce: editorFocusNonceRef.current,
+      });
+    });
+  }, []);
+
   useEffect(() => {
     const boot = async () => {
       const [nextSettings, nextAppInfo, nextUpdateState] = await Promise.all([
@@ -224,10 +278,11 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
       setSidebarNodes(nextSidebarNodes);
       setExpandedFolderPaths(Array.from(nextExpandedFolders));
       setHasHydratedSidebar(true);
+      requestEditorFocus("start");
     };
 
     void boot();
-  }, [pushHistory, restoreSidebarNodes, setActiveFile, setWorkspace, glyph]);
+  }, [pushHistory, requestEditorFocus, restoreSidebarNodes, setActiveFile, setWorkspace, glyph]);
 
   useEffect(
     () =>
@@ -318,29 +373,19 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
         let currentPath = activeFile.path;
         let finalFile = activeFile;
         const isUntitled = activeFile.name.startsWith("Untitled-");
+        const committedFileName = getCommittedDraftFileName(draftContent);
 
-        if (isUntitled && draftContent.trim().length > 0) {
+        if (isUntitled && committedFileName) {
           const previousPath = currentPath;
-          const firstLine =
-            draftContent
-              .split(/\r?\n/)[0]
-              ?.replace(/^#+\s*/, "")
-              .trim() || "Untitled";
-          const safeName = firstLine
-            .replace(/[^a-zA-Z0-9-_\s]/g, "")
-            .trim()
-            .substring(0, 50);
-          if (safeName && safeName !== "Untitled") {
-            const newName = `${safeName}.md`;
-            finalFile = await glyph.renameFile(currentPath, newName);
-            setSidebarNodes((prev) =>
-              upsertSidebarFile(renameSidebarFile(prev, currentPath, finalFile), finalFile),
-            );
-            currentPath = finalFile.path;
-            updateActiveFile(finalFile);
-            replaceHistoryPath(previousPath, finalFile.path);
-            await syncTrackedPaths(previousPath, finalFile.path);
-          }
+          finalFile = await glyph.renameFile(currentPath, committedFileName);
+          setSidebarNodes((prev) =>
+            upsertSidebarFile(renameSidebarFile(prev, currentPath, finalFile), finalFile),
+          );
+          currentPath = finalFile.path;
+          updateActiveFile(finalFile);
+          replaceHistoryPath(previousPath, finalFile.path);
+          await syncTrackedPaths(previousPath, finalFile.path);
+          requestEditorFocus("preserve");
         }
 
         const savedFile = await glyph.saveFile(currentPath, draftContent);
@@ -360,6 +405,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     isSaving,
     markSaved,
     replaceHistoryPath,
+    requestEditorFocus,
     setError,
     setSaving,
     syncTrackedPaths,
@@ -472,63 +518,81 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     setSettings(nextSettings);
     pushHistory(file.path);
     setIsPaletteOpen(false);
+    requestEditorFocus("start");
   }, [
     glyph,
     isWorkspaceMode,
     pushHistory,
+    requestEditorFocus,
     rootPath,
     setActiveFile,
     settings?.defaultWorkspacePath,
   ]);
 
-  const ensureActiveDraftFile = useCallback(async () => {
-    if (activeFile) {
-      return activeFile;
-    }
+  const ensureActiveDraftFile = useCallback(
+    async (draftValue: string) => {
+      if (activeFile) {
+        return activeFile;
+      }
 
-    if (draftFileCreationRef.current) {
-      return draftFileCreationRef.current;
-    }
+      if (draftFileCreationRef.current) {
+        return draftFileCreationRef.current;
+      }
 
-    const baseDir = isWorkspaceMode ? rootPath : (settings?.defaultWorkspacePath ?? null);
-    if (!baseDir) {
-      return null;
-    }
+      const baseDir = isWorkspaceMode ? rootPath : (settings?.defaultWorkspacePath ?? null);
+      if (!baseDir) {
+        return null;
+      }
 
-    const createPromise = (async () => {
-      const file = await glyph.createFile(baseDir, `Untitled-${Date.now()}.md`);
-      attachActiveFile(file);
-      setIsWorkspaceMode(true);
-      setSidebarNodes((prev) => upsertSidebarFile(prev, file));
-      const nextSettings = await glyph.getSettings();
-      setSettings(nextSettings);
-      pushHistory(file.path);
-      return file;
-    })();
+      const createPromise = (async () => {
+        const committedFileName = getCommittedDraftFileName(draftValue);
+        const draftFile = await glyph.createFile(baseDir, `Untitled-${Date.now()}.md`);
+        let file = draftFile;
 
-    draftFileCreationRef.current = createPromise;
+        if (committedFileName) {
+          try {
+            file = await glyph.renameFile(draftFile.path, committedFileName);
+          } catch {
+            file = draftFile;
+          }
+        }
 
-    try {
-      return await createPromise;
-    } finally {
-      draftFileCreationRef.current = null;
-    }
-  }, [
-    activeFile,
-    attachActiveFile,
-    glyph,
-    isWorkspaceMode,
-    pushHistory,
-    rootPath,
-    settings?.defaultWorkspacePath,
-  ]);
+        attachActiveFile(file);
+        setIsWorkspaceMode(true);
+        setSidebarNodes((prev) => upsertSidebarFile(prev, file));
+        const nextSettings = await glyph.getSettings();
+        setSettings(nextSettings);
+        pushHistory(file.path);
+        requestEditorFocus("preserve");
+        return file;
+      })();
+
+      draftFileCreationRef.current = createPromise;
+
+      try {
+        return await createPromise;
+      } finally {
+        draftFileCreationRef.current = null;
+      }
+    },
+    [
+      activeFile,
+      attachActiveFile,
+      glyph,
+      isWorkspaceMode,
+      pushHistory,
+      requestEditorFocus,
+      rootPath,
+      settings?.defaultWorkspacePath,
+    ],
+  );
 
   const handleDraftChange = useCallback(
     (nextContent: string) => {
       updateDraftContent(nextContent);
 
-      if (!activeFile && nextContent.trim().length > 0) {
-        void ensureActiveDraftFile().catch((error: unknown) => {
+      if (!activeFile && getCommittedDraftFileName(nextContent)) {
+        void ensureActiveDraftFile(nextContent).catch((error: unknown) => {
           setError(getErrorMessage(error));
         });
       }
@@ -902,10 +966,13 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
       kind: "file" as const,
       onSelect: () => void openFile(note.path),
     }));
+    const fallbackCommandItems = baseCommands.filter((item) =>
+      EMPTY_RESULTS_FALLBACK_COMMAND_IDS.has(item.id),
+    );
 
-    // No query: show pinned notes + all commands
+    // Keep default and empty-result states derived from the same command source.
     if (!query) {
-      return [...pinnedPaletteItems, ...baseCommands];
+      return dedupePaletteItems([...pinnedPaletteItems, ...baseCommands]);
     }
 
     const items: CommandPaletteItem[] = [];
@@ -955,7 +1022,9 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
       });
     });
 
-    return items;
+    const dedupedItems = dedupePaletteItems(items);
+
+    return dedupedItems.length > 0 ? dedupedItems : fallbackCommandItems;
   }, [allSearchableFiles, baseCommands, paletteQuery, openFile, pinnedNotes, searchResults]);
 
   // Reset query when palette closes
@@ -1225,6 +1294,7 @@ export const useDesktopAppController = (glyph: NonNullable<Window["glyph"]>) => 
     clearOutlineJumpRequest,
     createNote,
     draftContent,
+    editorFocusRequest,
     error,
     files,
     folderRevealLabel,

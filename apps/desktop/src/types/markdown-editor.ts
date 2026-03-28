@@ -1,10 +1,16 @@
 import type { UpdateState } from "../shared/workspace";
 import type { OutlineItem } from "@/types/navigation";
 
+export type EditorFocusRequest = {
+  mode: "start" | "preserve";
+  nonce: number;
+};
+
 export type MarkdownEditorProps = {
   content: string;
   fileName: string | null;
   filePath: string | null;
+  editorFocusRequest?: EditorFocusRequest | null;
   workspaceRootPath?: string | null;
   saveStateLabel: string;
   wordCount: number;
