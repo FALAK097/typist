@@ -95,6 +95,7 @@ export type AppInfo = {
   isPackaged: boolean;
   platform: string;
   updatesEnabled: boolean;
+  updatesMode: "automatic" | "manual" | "none";
 };
 
 export type UpdateStatus =
@@ -111,6 +112,8 @@ export type UpdateState = {
   currentVersion: string;
   availableVersion: string | null;
   downloadedVersion: string | null;
+  recentlyInstalledVersion: string | null;
+  releasePageUrl: string | null;
   releaseName: string | null;
   releaseNotes: string | null;
   progressPercent: number | null;
